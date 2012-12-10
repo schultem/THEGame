@@ -34,7 +34,6 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
     }
 }
 
-
 defaultproperties 
 {
   ControllerClass=class'THEBot_Enemy_Pikachu'

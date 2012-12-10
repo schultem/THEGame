@@ -44,6 +44,10 @@ var bool bInBattle;
 var class<THEPawn_NPC_Pikachu>  FollowerPawnClass;
 var THEPawn_NPC_Pikachu         Follower;
 
+var ParticleSystemComponent spawnedParticleComponents;
+var Vector particleLocation;
+var Rotator particleRotation;
+
 /** 
  * LAST NUMERAL KEYPRESS
  */
@@ -81,7 +85,22 @@ simulated event PostBeginPlay()
 //Experimental function because anim functions are shit
 exec function FuckUDK()
 {
+	particleLocation.X=100;
+	particleLocation.Y=100;
+	particleLocation.Z=50;
+	particleRotation.pitch=0;
+	particleRotation.yaw=0;
+	particleRotation.roll=0;
+	
     Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+	spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'WP_LinkGun.Effects.P_WP_Linkgun_Altbeam_Gold', particleLocation, particleRotation);
+}
+
+exec function fuckudkdeactivate()
+{
+	spawnedParticleComponents.SecondsBeforeInactive=0;
+    spawnedParticleComponents.DeactivateSystem();
+    spawnedParticleComponents.KillParticlesForced();
 }
 
 // ******************************************************************
@@ -141,53 +160,61 @@ function PCTimer()
 	        {
 			    if (lastNumeral<=6 && lastNumeral > 0)
 		        {
-				    //Count number of pokemon in party
-					j=0;
-	                for (i = 0; i < char.pokemonInventory.Length; ++i)
-	                {
-	                    if (char.pokemonInventory[i].inPlayerParty)
-	                	{
-	                        j++;
-	                	}
-						if (j==lastNumeral)
-						{
-						    if (char.pokemonInventory[i].isFainted==false)
-							{
-						        
-								//move or spawn player pokemon between player and enemy and set to idle
-								//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
-								if (char.pokemonInventory[i].pokemonSpecies=="Pikachu")
-								{
-									MoveFollowerForBattle();
-									RotateEnemyPokemonToFollower();
-								}
-								
-								//if spawn doesn't work, move the spawn location around the opponent until it does.  
-								//It it can't be spawned, tell the player and make them pick something else.
-								//rotate EnemyPokemon to player pokemon rotator(targetlocation-pawnlocation)
-								currentSelectedBattlePokemon=char.pokemonInventory[i];
-								for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
-								{
-									if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
-									{
-										break;
-									}
-									else
-									{
-										if (pokemonBattleParticipatedList[k] == "")
-										{
-											pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
-											break;
-										}
-									}
-								}
-								
-				                bSelectBattlePokemon=false;
-					            bSelectBattleOption=true;
-					            RegainPlayerControl();
-							}
-						}
-	                }
+					//Too close to the enemy to spawn/move
+					if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
+					{
+						//Count number of pokemon in party
+					    j=0;
+	                    for (i = 0; i < char.pokemonInventory.Length; ++i)
+	                    {
+	                        if (char.pokemonInventory[i].inPlayerParty)
+	                    	{
+	                            j++;
+	                    	}
+					    	if (j==lastNumeral)
+					    	{
+					    	    if (char.pokemonInventory[i].isFainted==false)
+					    		{
+					    	        
+					    			//move or spawn player pokemon between player and enemy and set to idle
+					    			//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
+					    			if (char.pokemonInventory[i].pokemonSpecies=="Pikachu")
+					    			{
+					    				MoveFollowerForBattle();
+					    				RotateEnemyPokemonToFollower();
+					    			}
+					    			
+					    			//if spawn doesn't work, move the spawn location around the opponent until it does.  
+					    			//It it can't be spawned, tell the player and make them pick something else.
+					    			//rotate EnemyPokemon to player pokemon rotator(targetlocation-pawnlocation)
+					    			currentSelectedBattlePokemon=char.pokemonInventory[i];
+					    			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
+					    			{
+					    				if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
+					    				{
+					    					break;
+					    				}
+					    				else
+					    				{
+					    					if (pokemonBattleParticipatedList[k] == "")
+					    					{
+					    						pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
+					    						break;
+					    					}
+					    				}
+					    			}
+					    			
+				                    bSelectBattlePokemon=false;
+					                bSelectBattleOption=true;
+					                RegainPlayerControl();
+					    		}
+					    	}
+	                    }
+					}
+					else
+					{
+						//display a warning as to why you can't select here
+					}
 				}
 			ResetNumeralPress();
 			}
@@ -296,7 +323,8 @@ function PCTimer()
 				{
 					bPlayerAttackAnimStarted = true;
 					bEnemyAttackAnimStarted = false;
-					Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+					StartPlayerPokemonAnimation();
+					//Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
 				}
 			}
 			else
@@ -305,7 +333,8 @@ function PCTimer()
 				{
 					bEnemyAttackAnimStarted = true;
 					bPlayerAttackAnimStarted = false;
-					EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
+					StartEnemyPokemonAnimation();
+					//EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
 				}
 			}
 			
@@ -317,6 +346,7 @@ function PCTimer()
 				    {
 				    	//animation was started and finished
 						//make sure the enemy did not faint after getting attacked, if so though, go to player victory
+						StopPokemonParticleComponent();
 						fainted = CheckFainted();
 						if (fainted=="enemy")
 						{	
@@ -333,7 +363,7 @@ function PCTimer()
 						else
 						{
 							bEnemyAttackAnimStarted = true;
-							EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
+							StartEnemyPokemonAnimation();
 							bPlayerAttackAnimStarted = false;
 						}
 				    }
@@ -344,6 +374,7 @@ function PCTimer()
 				    {
 						//if both animations have finished, change state
 						//if enemy attacked first and resulted in a player faint, change state appropriately
+						StopPokemonParticleComponent();
 						fainted = CheckFainted();
 						if (fainted == "enemy")
 						{
@@ -375,6 +406,7 @@ function PCTimer()
 				    {
 				    	//animation was started and finished
 						//make sure the player did not faint after getting attacked, if so though, go to enemy victory
+						StopPokemonParticleComponent();
 						fainted = CheckFainted();
 						if (fainted == "player")
 						{	
@@ -390,7 +422,7 @@ function PCTimer()
 						else
 						{
 							bPlayerAttackAnimStarted = true;
-							Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+							StartPlayerPokemonAnimation();
 							bEnemyAttackAnimStarted = false;
 						}
 				    }
@@ -401,6 +433,7 @@ function PCTimer()
 				    {
 						//if both animations have finished, change state
 						//if player attacked first and resulted in an enemy faint, change state appropriately
+						StopPokemonParticleComponent();
 						fainted = CheckFainted();
 						if (fainted == "player")
 						{
@@ -437,6 +470,7 @@ function PCTimer()
 	    			bInBattle = true;
 					bSelectBattlePokemon=true;
 					EnemyPokemon=WildPokemon;
+					EnemyPokemon.bInBattle=true;
 					//Create enemy instance, need a random level based on character level..
 					temp=GetCharacterMaxLevelPokemon();
 					//Make a calculation to determine the wild opponent's level
@@ -449,14 +483,13 @@ function PCTimer()
 					{
 					    temp=100;
 					}
-					
 					EnemyPokemonDBInstance=CreateWildEnemyPokemonFromDB(temp);
 					//Add attacks to EnemyPokemonDBInstance
 					AddOpponentAttackForLevel();
-					EnemyPokemon.bInBattle=true;
+					
 					RotateEnemyPokemonToPlayer();
 					
-	    		    GoToState('Idle');
+	    		    //GoToState('Idle');
 	     	    }
             }
         }
@@ -636,6 +669,7 @@ function THEPokemonInventory CreateWildEnemyPokemonFromDB(int level)
 
 function BattleStateExitCleanup()
 {
+	StopPokemonParticleComponent();
 	bSelectBattlePokemon=false;
 	bSelectBattleOption=false;
 	bSelectBattleAttack=false;
@@ -2179,6 +2213,128 @@ function pokemonBattleParticipatedInit()
 	pokemonBattleParticipatedList[3]="";
 	pokemonBattleParticipatedList[4]="";
 	pokemonBattleParticipatedList[5]="";
+}
+//******************************************************************
+//*  
+//*  
+//*  
+//*                     Animation Functions
+//*  
+//*  
+//*  
+//*  
+//******************************************************************
+function StartPlayerPokemonAnimation()
+{
+	local Vector followerLocation,enemyLocation;
+	local Rotator particleRotation;
+	
+	followerLocation  = Follower.Location;
+	enemyLocation     = EnemyPokemon.Location;
+	
+	particleRotation = rotator(enemyLocation - followerLocation);
+	
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FirstAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SecondAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.ThirdAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack3',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FourthAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack4',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FifthAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack5',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SixthAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack6',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SeventhAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack7',1.f);
+	}
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.EighthAttackName)
+	{
+		Follower.TestSlot.PlayCustomAnim('Attack8',1.f);
+	}
+
+	StartPokemonParticleComponent(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName, enemyLocation, followerLocation, particleRotation);
+}
+
+function StartEnemyPokemonAnimation()
+{
+	local Vector followerLocation,enemyLocation;
+	local Rotator particleRotation;
+	
+	followerLocation  = Follower.Location;
+	enemyLocation     = EnemyPokemon.Location;
+	
+	particleRotation = rotator(followerLocation - enemyLocation);
+	
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.FirstAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.SecondAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.ThirdAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack3',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.FourthAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack4',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.FifthAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack5',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.SixthAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack6',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.SeventhAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack7',1.f);
+	}
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.EighthAttackName)
+	{
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack8',1.f);
+	}
+
+	StartPokemonParticleComponent(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName, followerLocation, enemyLocation, particleRotation);
+}
+
+
+function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator particleRotation)
+{
+	if (attackName == "ThunderShock")
+	{
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thundershock', targetLocation, particleRotation);
+	}
+	if (attackName == "Growl")
+	{
+		particleRotation.pitch = particleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Growl', sourceLocation, particleRotation);
+	}
+}
+
+function StopPokemonParticleComponent()
+{
+	spawnedParticleComponents.SecondsBeforeInactive=0;
+    spawnedParticleComponents.DeactivateSystem();
+    spawnedParticleComponents.KillParticlesForced();
 }
 
 
