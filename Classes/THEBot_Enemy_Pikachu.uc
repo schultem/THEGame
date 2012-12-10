@@ -53,7 +53,8 @@ function AITimer()
 	}
 	else
 	{
-		//Rotate to face the pokemon the player has chosen
+		//Stop and otate to face the pokemon the player has chosen
+		MyTarget=Pawn.Location;
 	    GoToState('BattlePosition');
 	}
 }

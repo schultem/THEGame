@@ -206,7 +206,7 @@ function PCTimer()
 					    			
 				                    bSelectBattlePokemon=false;
 					                bSelectBattleOption=true;
-					                RegainPlayerControl();
+					                //RegainPlayerControl();
 					    		}
 					    	}
 	                    }
@@ -670,6 +670,9 @@ function THEPokemonInventory CreateWildEnemyPokemonFromDB(int level)
 function BattleStateExitCleanup()
 {
 	StopPokemonParticleComponent();
+	bEnemyAttackAnimStarted = false;
+	bPlayerAttackAnimStarted = false;
+	bPlayBattleAnimations = false;
 	bSelectBattlePokemon=false;
 	bSelectBattleOption=false;
 	bSelectBattleAttack=false;
@@ -2227,12 +2230,12 @@ function pokemonBattleParticipatedInit()
 function StartPlayerPokemonAnimation()
 {
 	local Vector followerLocation,enemyLocation;
-	local Rotator particleRotation;
+	local Rotator playerParticleRotation;
 	
 	followerLocation  = Follower.Location;
 	enemyLocation     = EnemyPokemon.Location;
 	
-	particleRotation = rotator(enemyLocation - followerLocation);
+	playerParticleRotation = rotator(enemyLocation - followerLocation);
 	
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FirstAttackName)
 	{
@@ -2267,18 +2270,18 @@ function StartPlayerPokemonAnimation()
 		Follower.TestSlot.PlayCustomAnim('Attack8',1.f);
 	}
 
-	StartPokemonParticleComponent(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName, enemyLocation, followerLocation, particleRotation);
+	StartPokemonParticleComponent(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName, enemyLocation, followerLocation, playerParticleRotation);
 }
 
 function StartEnemyPokemonAnimation()
 {
 	local Vector followerLocation,enemyLocation;
-	local Rotator particleRotation;
+	local Rotator enemyParticleRotation;
 	
 	followerLocation  = Follower.Location;
 	enemyLocation     = EnemyPokemon.Location;
 	
-	particleRotation = rotator(followerLocation - enemyLocation);
+	enemyParticleRotation = rotator(followerLocation - enemyLocation);
 	
 	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.FirstAttackName)
 	{
@@ -2313,20 +2316,20 @@ function StartEnemyPokemonAnimation()
 		EnemyPokemon.TestSlot.PlayCustomAnim('Attack8',1.f);
 	}
 
-	StartPokemonParticleComponent(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName, followerLocation, enemyLocation, particleRotation);
+	StartPokemonParticleComponent(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName, followerLocation, enemyLocation, enemyParticleRotation);
 }
 
 
-function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator particleRotation)
+function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator spawnParticleRotation)
 {
 	if (attackName == "ThunderShock")
 	{
-		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thundershock', targetLocation, particleRotation);
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thundershock', targetLocation, spawnParticleRotation);
 	}
 	if (attackName == "Growl")
 	{
-		particleRotation.pitch = particleRotation.pitch-90*DegToUnrRot;
-		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Growl', sourceLocation, particleRotation);
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Growl', sourceLocation, spawnParticleRotation);
 	}
 }
 
