@@ -86,6 +86,12 @@ function DrawHUD()
 		DrawCenterTitle();
 		DrawCenterExp();
 	}
+	if(ThePlayerController.bPartyPokemonCanLearnNewMove)
+	{
+		DrawSmallCenterBox();
+		DrawCenterTitle();
+		DrawPokemonWillLearnInfo();
+	}
 	if(ThePlayerController.bSelectBattleOption)
 	{
 		optionList[0]="Fight!";
@@ -114,6 +120,17 @@ function DrawCenterBox()
 	Canvas.SetPos(SizeX/4,SizeY/5);
 	Canvas.SetDrawColor(0,0,0,100);
 	Canvas.DrawRect(SizeX/2,3*SizeY/5);
+	
+	Canvas.SetPos(SizeX/4,SizeY/5);
+	Canvas.SetDrawColor(0,0,0,100);
+	Canvas.DrawRect(SizeX/2,3*SizeY/(7*5));
+}
+
+function DrawSmallCenterBox()
+{
+	Canvas.SetPos(SizeX/4,SizeY/5);
+	Canvas.SetDrawColor(0,0,0,100);
+	Canvas.DrawRect(SizeX/2,2*3*SizeY/(7*5));
 	
 	Canvas.SetPos(SizeX/4,SizeY/5);
 	Canvas.SetDrawColor(0,0,0,100);
@@ -183,6 +200,17 @@ function DrawCenterExp()
 	    Canvas.SetDrawColor(255,255,255,200);
 	    Canvas.Font = class'Engine'.static.GetLargeFont();
 	    Canvas.DrawText(ThePlayerController.pokemonBattleParticipatedList[k]$"\nLevel "$battlersLevelList[k]);
+	}
+}
+
+function DrawPokemonWillLearnInfo()
+{
+	Canvas.SetPos(SizeX/4+5,SizeY/5+3*SizeY/(7*5)+15);
+	Canvas.SetDrawColor(255,255,255,200);
+	Canvas.Font = class'Engine'.static.GetLargeFont();
+	if (ThePlayerController.pokemonThatCanLearnNewMove.Length > 0)
+	{
+		Canvas.DrawText(ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].species$" will learn "$ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].attack);
 	}
 }
 

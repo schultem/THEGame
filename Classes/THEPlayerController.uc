@@ -16,7 +16,13 @@ var THECharacter char;
 var float  Distance;
 var float  typeDiffPerc[225];
 var String typeNameList[15];
-var String pokemonBattleParticipatedList[6];
+var String pokemonBattleParticipatedList[6]; //A list to keep track of each pokemon that fought in a battle
+Struct pokemonMove
+{
+	var String species; 
+	var String attack;
+};
+var array<pokemonMove> pokemonThatCanLearnNewMove;    //A list to keep track of each pokemon that recently leveled and can learn a new move
 
 var THEPawn_NPC_Enemy WildPokemon;
 var THEPawn_NPC_Enemy EnemyPokemon;
@@ -28,6 +34,9 @@ var THEPawn thePawn;
 var THEPokemonInventory currentSelectedBattlePokemon;
 var int currentSelectedBattleAttack;
 
+/** 
+ * STATE VARIABLES
+ */
 var bool bSelectCharacter;
 var bool bSelectBattlePokemon;
 var bool bSelectBattleOption;
@@ -38,9 +47,13 @@ var bool bPlayBattleAnimations;
 var bool bPlayerAttackFirst;
 var bool bPlayerAttackAnimStarted;
 var bool bEnemyAttackAnimStarted;
-var bool bEnemyFainted;
+var bool bPartyPokemonCanLearnNewMove;
+var bool bPartyPokemonReplaceMove;
 var bool bInBattle;
 
+/** 
+ * FOLLOWER VARIABLES
+ */
 var class<THEPawn_NPC_Pikachu>  FollowerPawnClass;
 var THEPawn_NPC_Pikachu         Follower;
 
@@ -60,18 +73,24 @@ simulated event PostBeginPlay()
 	super.PostBeginPlay();
 	
 	//Initial "State"/GameControl Variables, maybe move these to default eventually
-	bSelectCharacter=true;
-	bSelectBattlePokemon=false;
-	bSelectBattleOption=false;
-	bSelectBattleAttack=false;
-	bSelectBattleItems=false;
-	bEnemyFainted=false;
-	bPlayerAttackAnimStarted=false;
-	bEnemyAttackAnimStarted=false;
+	bSelectCharacter              = true;
+	bSelectBattlePokemon          = false;
+	bSelectBattleOption           = false;
+	bSelectBattleAttack           = false;
+	bSelectBattleItems            = false;
+	bPlayerPokemonVictory         = false;
+	bPlayBattleAnimations         = false;
+	bPlayerAttackFirst            = false;
+	bPlayerAttackAnimStarted      = false;
+	bEnemyAttackAnimStarted       = false;
+	bPartyPokemonCanLearnNewMove  = false;
+	bPartyPokemonReplaceMove      = false;
+	bInBattle                     = false;
 	currentSelectedBattleAttack=0;
 	
 	TypeArrayInit();
 	pokemonBattleParticipatedInit();
+	pokemonThatCanLearnNewMoveInit();
 
 	//Input
 	ResetNumeralPress();
@@ -80,27 +99,6 @@ simulated event PostBeginPlay()
 	gamestate = THEGame(WorldInfo.Game).gamestate;
 	
 	SetTimer(0.1, true, 'PCTimer');
-}
-
-//Experimental function because anim functions are shit
-exec function FuckUDK()
-{
-	particleLocation.X=100;
-	particleLocation.Y=100;
-	particleLocation.Z=50;
-	particleRotation.pitch=0;
-	particleRotation.yaw=0;
-	particleRotation.roll=0;
-	
-    Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
-	spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'WP_LinkGun.Effects.P_WP_Linkgun_Altbeam_Gold', particleLocation, particleRotation);
-}
-
-exec function fuckudkdeactivate()
-{
-	spawnedParticleComponents.SecondsBeforeInactive=0;
-    spawnedParticleComponents.DeactivateSystem();
-    spawnedParticleComponents.KillParticlesForced();
 }
 
 // ******************************************************************
@@ -183,10 +181,6 @@ function PCTimer()
 					    				MoveFollowerForBattle();
 					    				RotateEnemyPokemonToFollower();
 					    			}
-					    			
-					    			//if spawn doesn't work, move the spawn location around the opponent until it does.  
-					    			//It it can't be spawned, tell the player and make them pick something else.
-					    			//rotate EnemyPokemon to player pokemon rotator(targetlocation-pawnlocation)
 					    			currentSelectedBattlePokemon=char.pokemonInventory[i];
 					    			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
 					    			{
@@ -299,14 +293,22 @@ function PCTimer()
 		{
 		    if (bNumeralPressed)
 	        {
-				//Finally, set wild pokemon to fainted
-				BattleStateExitCleanup();
-				RegainPlayerControl();
-				pokemonBattleParticipatedInit();
-			    EnemyPokemon.bFainted  = true;
-			    EnemyPokemon.bInBattle = false;
-			    bPlayerPokemonVictory  = false;
-			    bInBattle = false;
+				if (pokemonThatCanLearnNewMove.Length > 0)
+				{
+					bPartyPokemonCanLearnNewMove = true;
+				   	bPlayerPokemonVictory  = false;
+				}
+				else
+				{
+					//Finally, set wild pokemon to fainted
+					BattleStateExitCleanup();
+					RegainPlayerControl();
+			        EnemyPokemon.bFainted  = true;
+			        EnemyPokemon.bInBattle = false;
+			        bPlayerPokemonVictory  = false;
+			        bInBattle = false;
+				}
+			ResetNumeralPress();
 			}
 			else
 			{
@@ -314,6 +316,53 @@ function PCTimer()
 			    GoToState('Idle');
 			}
 		}
+		
+		if (bPartyPokemonCanLearnNewMove) //display "pokemonThatCanLearnNewMove(Length-1).species can learn pokemonThatCanLearnNewMove(Length-1).attack" and a single option button for (1)Continue
+		{
+			if (pokemonThatCanLearnNewMove.Length == 0)
+			{
+				//Finally, set wild pokemon to fainted
+				BattleStateExitCleanup();
+				RegainPlayerControl();
+				EnemyPokemon.bFainted  = true;
+				EnemyPokemon.bInBattle = false;
+				bPartyPokemonCanLearnNewMove  = false;
+				bInBattle = false;
+			}
+			else
+			{
+				if (bNumeralPressed)
+				{
+					for (i = 0; i < char.pokemonInventory.Length; ++i) //it might be best to replace this syntax used throughout the code with a single function that returns the inventory object, but again it doesn't really matter
+	                {
+						if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
+						{
+						    if (char.pokemonInventory[i].pokemonAttackInventory.Length<4)
+						    {
+								//add the attack
+								AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
+								//pop the last struct from pokemonThatCanLearnNewMove
+								pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
+						    }
+						    else
+						    {
+								//goto state bPartyPokemonReplaceMove
+						    }
+						}
+					}
+				ResetNumeralPress();
+				}
+			}
+		}
+		
+		//if(bPartyPokemonReplaceMove)//display "pokemonThatCanLearnNewMove(Length-1).species can learn pokemonThatCanLearnNewMove(Length-1).attack, replace an existing move?" and a list of current attack names and (5. cancel)
+		//{
+		//		if (bNumeralPressed)
+		//		{
+		//			//either go to next pokemon that can or will learn a new move, or select a move to delete
+		//		ResetNumeralPress();
+		//		}
+		//}
 		
 		if (bPlayBattleAnimations)
 		{
@@ -324,7 +373,6 @@ function PCTimer()
 					bPlayerAttackAnimStarted = true;
 					bEnemyAttackAnimStarted = false;
 					StartPlayerPokemonAnimation();
-					//Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
 				}
 			}
 			else
@@ -334,7 +382,6 @@ function PCTimer()
 					bEnemyAttackAnimStarted = true;
 					bPlayerAttackAnimStarted = false;
 					StartEnemyPokemonAnimation();
-					//EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
 				}
 			}
 			
@@ -354,7 +401,7 @@ function PCTimer()
 							`log("enemy fainted, anim/control");
 							//This section defines what happens after an opposing pokemon has fainted
 							bPlayerPokemonVictory=true;
-							PlayerPokemonVictory();
+							PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
 							//reset play animation flags
 							bEnemyAttackAnimStarted = false;
 							bPlayerAttackAnimStarted = false;
@@ -381,7 +428,7 @@ function PCTimer()
 							//player animation has started, enemy attacked first, player animation finished, enemy fainted => enemy fainted
 							`log("enemy fainted, anim/control");
 							bPlayerPokemonVictory=true;
-							PlayerPokemonVictory();
+							PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
 							//reset play animation flags
 							bEnemyAttackAnimStarted = false;
 							bPlayerAttackAnimStarted = false;
@@ -670,6 +717,8 @@ function THEPokemonInventory CreateWildEnemyPokemonFromDB(int level)
 function BattleStateExitCleanup()
 {
 	StopPokemonParticleComponent();
+	pokemonBattleParticipatedInit();
+	pokemonThatCanLearnNewMoveInit();
 	bEnemyAttackAnimStarted = false;
 	bPlayerAttackAnimStarted = false;
 	bPlayBattleAnimations = false;
@@ -1271,12 +1320,13 @@ function ExchangeBattleAttacks()
 function ApplyPlayerStatusAilments()
 {
     local float temp;
-	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffect != "none")
+	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffect != "none")
 	{
 	    temp = Rand(100);
-	    if ((EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffectMag*100)>temp)
+	    if ((currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffectMag*100)>temp)
 		{
-			switch(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffect)
+		
+			switch(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffect)
 			{
 			case ("paralyzed"):
 				if (EnemyPokemonDBInstance.paralyzed == false)
@@ -1284,6 +1334,10 @@ function ApplyPlayerStatusAilments()
 					EnemyPokemonDBInstance.paralyzed = true;
 					EnemyPokemonDBInstance.SpeedStat = EnemyPokemonDBInstance.SpeedStat*0.25;
 					EnemyPokemonDBInstance.Accuracy  = EnemyPokemonDBInstance.Accuracy*0.25;
+					THEHud(myHUD).SetEnemyStatus("paralyzed!");
+				}
+				else
+				{
 					THEHud(myHUD).SetEnemyStatus("paralyzed!");
 				}
 				break;
@@ -1296,12 +1350,12 @@ function ApplyPlayerStatusAilments()
 function ApplyEnemyStatusAilments()
 {
     local float temp;
-	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffect != "none")
+	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffect != "none")
 	{
 	    temp = Rand(100);
-	    if ((currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffectMag*100)>temp)
+	    if ((EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffectMag*100)>temp)
 		{
-			switch(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].extraEffect)
+			switch(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].extraEffect)
 			{
 			case ("paralyzed"):
 				if (currentSelectedBattlePokemon.paralyzed == false)
@@ -1310,6 +1364,10 @@ function ApplyEnemyStatusAilments()
 					currentSelectedBattlePokemon.SpeedStat = currentSelectedBattlePokemon.SpeedStat*0.25;
 					currentSelectedBattlePokemon.Accuracy  = currentSelectedBattlePokemon.Accuracy*0.25;
 					THEHud(myHUD).SetPlayerStatus("paralyzed!");
+				}
+				else
+				{
+					THEHud(myHUD).SetEnemyStatus("paralyzed!");
 				}
 				break;
 			}
@@ -1435,6 +1493,7 @@ function UpdatePlayerPartyExperience()
 function UpdatePlayerPartyLevelAndStats()
 {
 	local int i,nextLevel;
+	local pokemonMove pM;
 	
 	for (i = 0; i < char.pokemonInventory.Length; ++i)
 	{
@@ -1453,16 +1512,69 @@ function UpdatePlayerPartyLevelAndStats()
 			{
 				if (char.pokemonInventory[i].currentExperience >= (4*(nextLevel*nextLevel*nextLevel)/5))
 				{
-					//Update stats
-					char.pokemonInventory[i].Level++;
-					char.pokemonInventory[i].maxHitPoints=((char.pokemonInventory[i].IVHP + char.pokemonInventory[i].BaseHP + Sqrt(char.pokemonInventory[i].currentEVHP)/8 + 50)*char.pokemonInventory[i].Level)/50+10;
-					char.pokemonInventory[i].AttackStat=((char.pokemonInventory[i].IVAttack + char.pokemonInventory[i].BaseAttack + Sqrt(char.pokemonInventory[i].currentEVAttack)/8)*char.pokemonInventory[i].Level)/50+5;
-					char.pokemonInventory[i].DefenseStat=((char.pokemonInventory[i].IVDefense + char.pokemonInventory[i].BaseDefense + Sqrt(char.pokemonInventory[i].currentEVDefense)/8)*char.pokemonInventory[i].Level)/50+5;
-					char.pokemonInventory[i].SpAtkStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpAtk + Sqrt(char.pokemonInventory[i].currentEVSpAttack)/8)*char.pokemonInventory[i].Level)/50+5;
-					char.pokemonInventory[i].SpDefStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpDef + Sqrt(char.pokemonInventory[i].currentEVSpDefense)/8)*char.pokemonInventory[i].Level)/50+5;
-					char.pokemonInventory[i].SpeedStat=((char.pokemonInventory[i].IVSpeed + char.pokemonInventory[i].BaseSpeed + Sqrt(char.pokemonInventory[i].currentEVSpeed)/8)*char.pokemonInventory[i].Level)/50+5;
-					char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
+					if (char.pokemonInventory[i].Level != 100)
+					{
+					    //Update stats
+					    char.pokemonInventory[i].Level++;
+					    char.pokemonInventory[i].maxHitPoints=((char.pokemonInventory[i].IVHP + char.pokemonInventory[i].BaseHP + Sqrt(char.pokemonInventory[i].currentEVHP)/8 + 50)*char.pokemonInventory[i].Level)/50+10;
+					    char.pokemonInventory[i].AttackStat=((char.pokemonInventory[i].IVAttack + char.pokemonInventory[i].BaseAttack + Sqrt(char.pokemonInventory[i].currentEVAttack)/8)*char.pokemonInventory[i].Level)/50+5;
+					    char.pokemonInventory[i].DefenseStat=((char.pokemonInventory[i].IVDefense + char.pokemonInventory[i].BaseDefense + Sqrt(char.pokemonInventory[i].currentEVDefense)/8)*char.pokemonInventory[i].Level)/50+5;
+					    char.pokemonInventory[i].SpAtkStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpAtk + Sqrt(char.pokemonInventory[i].currentEVSpAttack)/8)*char.pokemonInventory[i].Level)/50+5;
+					    char.pokemonInventory[i].SpDefStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpDef + Sqrt(char.pokemonInventory[i].currentEVSpDefense)/8)*char.pokemonInventory[i].Level)/50+5;
+					    char.pokemonInventory[i].SpeedStat=((char.pokemonInventory[i].IVSpeed + char.pokemonInventory[i].BaseSpeed + Sqrt(char.pokemonInventory[i].currentEVSpeed)/8)*char.pokemonInventory[i].Level)/50+5;
+					    char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
+						//I am aware this method is a pain, I don't mind though.  I could replace it with an instantiated array of structs and loop through them, but would it really make any real difference in the big scheme of things?
+						if (char.pokemonInventory[i].Level == char.pokemonInventory[i].FirstAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].FirstAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SecondAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].SecondAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].ThirdAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].ThirdAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FourthAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].FourthAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FifthAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].FifthAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SixthAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].SixthAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SeventhAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].SeventhAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
+						if(char.pokemonInventory[i].Level == char.pokemonInventory[i].EighthAttackLevel)
+						{
+							pM.species = char.pokemonInventory[i].pokemonSpecies;
+							pM.attack = char.pokemonInventory[i].EighthAttackName;
+							pokemonThatCanLearnNewMove.addItem(pM);
+						}
 
+						`log(pM.species$" can learn "$pM.attack);
+					}
 				}
 			}
 		}
@@ -1712,6 +1824,27 @@ function array<string> returnPokemonChars()
 	}
 	return chars;
 }
+/**
+ * Return a list of the current upgrading Pokemon's attacks
+ */
+
+function array<string> GetPokemonToLearnAttackList()
+{
+	local array<string> chars;
+	local int i;
+	for (i = 0; i < char.pokemonInventory.Length; ++i)
+	{
+		if( char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
+		{
+			for (i = 0; i < char.pokemonInventory[i].pokemonAttackInventory.Length; ++i)
+			{
+				chars.addItem(char.pokemonInventory[i].pokemonAttackInventory[i].attackDisplayName);
+			}
+			
+		}
+	}
+	return chars;
+}
 
 /**
  * Return a list of the current battling Pokemon's attacks
@@ -1726,6 +1859,7 @@ function array<string> returnAttackChars()
 	}
 	return chars;
 }
+
 
 /**
  * Return a list of the current battling pokemon
@@ -1883,7 +2017,7 @@ exec function bool addPokemonAttack(String pokemon, String baseAttack)
 	    TeamMessage(none, "Attack "$inv.attackDisplayName$" not added to pokemon "$pokemon$" because it has 4 moves already.", 'none');
 		return false;
 	}
-	TeamMessage(none, "Attack "$inv.attackDisplayName$" added to pokemon "$pokemon, 'none');
+	//TeamMessage(none, "Attack "$inv.attackDisplayName$" added to pokemon "$pokemon, 'none');
 	return true;
 }
 
@@ -2217,6 +2351,11 @@ function pokemonBattleParticipatedInit()
 	pokemonBattleParticipatedList[4]="";
 	pokemonBattleParticipatedList[5]="";
 }
+
+function pokemonThatCanLearnNewMoveInit()
+{
+	pokemonThatCanLearnNewMove.Length=0;
+}
 //******************************************************************
 //*  
 //*  
@@ -2243,7 +2382,7 @@ function StartPlayerPokemonAnimation()
 	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SecondAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+		Follower.TestSlot.PlayCustomAnim('Attack2',1.f);
 	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.ThirdAttackName)
 	{
@@ -2289,7 +2428,7 @@ function StartEnemyPokemonAnimation()
 	}
 	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.SecondAttackName)
 	{
-		EnemyPokemon.TestSlot.PlayCustomAnim('Attack1',1.f);
+		EnemyPokemon.TestSlot.PlayCustomAnim('Attack2',1.f);
 	}
 	if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == EnemyPokemonDBInstance.ThirdAttackName)
 	{
