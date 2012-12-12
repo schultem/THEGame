@@ -317,7 +317,7 @@ function PCTimer()
 			}
 		}
 		
-		if (bPartyPokemonCanLearnNewMove) //display "pokemonThatCanLearnNewMove(Length-1).species can learn pokemonThatCanLearnNewMove(Length-1).attack" and a single option button for (1)Continue
+		if (bPartyPokemonCanLearnNewMove)
 		{
 			if (pokemonThatCanLearnNewMove.Length == 0)
 			{
@@ -347,6 +347,8 @@ function PCTimer()
 						    else
 						    {
 								//goto state bPartyPokemonReplaceMove
+								bPartyPokemonCanLearnNewMove = false;
+								bPartyPokemonReplaceMove = true;
 						    }
 						}
 					}
@@ -355,14 +357,30 @@ function PCTimer()
 			}
 		}
 		
-		//if(bPartyPokemonReplaceMove)//display "pokemonThatCanLearnNewMove(Length-1).species can learn pokemonThatCanLearnNewMove(Length-1).attack, replace an existing move?" and a list of current attack names and (5. cancel)
-		//{
-		//		if (bNumeralPressed)
-		//		{
-		//			//either go to next pokemon that can or will learn a new move, or select a move to delete
-		//		ResetNumeralPress();
-		//		}
-		//}
+		if(bPartyPokemonReplaceMove)
+		{
+				if (bNumeralPressed && lastNumeral>=1 && lastNumeral<=5)
+				{
+					if (lastNumeral != 5)
+					{
+						chars = GetPokemonToLearnAttackList();
+						for (i = 0; i < char.pokemonInventory.Length; ++i)
+	                    {
+							if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
+							{
+								removePokemonAttack(char.pokemonInventory[i].pokemonSpecies, chars[lastNumeral-1]);
+								AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
+							}
+						}
+					}
+					//pop the last struct from pokemonThatCanLearnNewMove
+					pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
+					bPartyPokemonCanLearnNewMove = true;
+					bPartyPokemonReplaceMove = false;
+					
+				ResetNumeralPress();
+				}
+		}
 		
 		if (bPlayBattleAnimations)
 		{
@@ -1333,7 +1351,7 @@ function ApplyPlayerStatusAilments()
 				{
 					EnemyPokemonDBInstance.paralyzed = true;
 					EnemyPokemonDBInstance.SpeedStat = EnemyPokemonDBInstance.SpeedStat*0.25;
-					EnemyPokemonDBInstance.Accuracy  = EnemyPokemonDBInstance.Accuracy*0.25;
+					EnemyPokemonDBInstance.Accuracy  = EnemyPokemonDBInstance.Accuracy*0.75;
 					THEHud(myHUD).SetEnemyStatus("paralyzed!");
 				}
 				else
@@ -1831,14 +1849,14 @@ function array<string> returnPokemonChars()
 function array<string> GetPokemonToLearnAttackList()
 {
 	local array<string> chars;
-	local int i;
+	local int i,j;
 	for (i = 0; i < char.pokemonInventory.Length; ++i)
 	{
 		if( char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
 		{
-			for (i = 0; i < char.pokemonInventory[i].pokemonAttackInventory.Length; ++i)
+			for (j = 0; j < char.pokemonInventory[i].pokemonAttackInventory.Length; ++j)
 			{
-				chars.addItem(char.pokemonInventory[i].pokemonAttackInventory[i].attackDisplayName);
+				chars.addItem(char.pokemonInventory[i].pokemonAttackInventory[j].attackDisplayName);
 			}
 			
 		}
@@ -2092,7 +2110,7 @@ exec function removePokemonAttack(String pokemon, String baseAttack)
 	}
 
 	char.removePokemonAttackInventory(pokemon,baseAttack);
-	TeamMessage(none, "Attack "$baseAttack$" removed from pokemon "$pokemon, 'none');
+	//TeamMessage(none, "Attack "$baseAttack$" removed from pokemon "$pokemon, 'none');
 	return;
 }
 

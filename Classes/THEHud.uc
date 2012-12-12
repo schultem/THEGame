@@ -33,7 +33,7 @@ function DrawHUD()
 	local array<string> upperchars;
 	local array<string> optionList;
     super.DrawHUD();
-	    
+	
 	if(ThePlayerController.bSelectCharacter)
 	{
 	    lowerchars = ThePlayerController.returnChars();
@@ -91,6 +91,16 @@ function DrawHUD()
 		DrawSmallCenterBox();
 		DrawCenterTitle();
 		DrawPokemonWillLearnInfo();
+	}
+	if(ThePlayerController.bPartyPokemonReplaceMove)
+	{
+		lowerchars = ThePlayerController.GetPokemonToLearnAttackList();
+		lowerchars.addItem("5. Cancel");
+		DrawLowerBoxes(5);
+		DrawLowerStringNameList(lowerchars,5);
+		DrawSmallCenterBox();
+		DrawCenterTitle();
+		DrawPokemonReplaceInfo();
 	}
 	if(ThePlayerController.bSelectBattleOption)
 	{
@@ -211,6 +221,17 @@ function DrawPokemonWillLearnInfo()
 	if (ThePlayerController.pokemonThatCanLearnNewMove.Length > 0)
 	{
 		Canvas.DrawText(ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].species$" will learn "$ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].attack);
+	}
+}
+
+function DrawPokemonReplaceInfo()
+{
+	Canvas.SetPos(SizeX/4+5,SizeY/5+3*SizeY/(7*5)+15);
+	Canvas.SetDrawColor(255,255,255,200);
+	Canvas.Font = class'Engine'.static.GetLargeFont();
+	if (ThePlayerController.pokemonThatCanLearnNewMove.Length > 0)
+	{
+		Canvas.DrawText(ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].species$": Choose an attack to replace with "$ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].attack);
 	}
 }
 
@@ -358,7 +379,7 @@ Function DrawUpperStringNameList(array<string> names)
 	Canvas.Font = class'Engine'.static.GetLargeFont();
 	Canvas.DrawText(names[0]);
 	
-	Canvas.SetPos(SizeX-175,30);
+	Canvas.SetPos(SizeX-190,30);
 	Canvas.SetDrawColor(255,255,255,200);
 	Canvas.Font = class'Engine'.static.GetLargeFont();
 	Canvas.DrawText(names[1]);
