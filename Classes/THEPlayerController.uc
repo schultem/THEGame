@@ -2488,6 +2488,16 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Growl', sourceLocation, spawnParticleRotation);
 	}
+	if (attackName == "ThunderWave")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunderwave', targetLocation, spawnParticleRotation);
+	}
+	if (attackName == "QuickAttack")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_QuickAttack', targetLocation, spawnParticleRotation);
+	}
 }
 
 function StopPokemonParticleComponent()

@@ -95,7 +95,7 @@ function DrawHUD()
 	if(ThePlayerController.bPartyPokemonReplaceMove)
 	{
 		lowerchars = ThePlayerController.GetPokemonToLearnAttackList();
-		lowerchars.addItem("5. Cancel");
+		lowerchars.addItem("Cancel");
 		DrawLowerBoxes(5);
 		DrawLowerStringNameList(lowerchars,5);
 		DrawSmallCenterBox();
@@ -379,7 +379,7 @@ Function DrawUpperStringNameList(array<string> names)
 	Canvas.Font = class'Engine'.static.GetLargeFont();
 	Canvas.DrawText(names[0]);
 	
-	Canvas.SetPos(SizeX-190,30);
+	Canvas.SetPos(SizeX-250,30);
 	Canvas.SetDrawColor(255,255,255,200);
 	Canvas.Font = class'Engine'.static.GetLargeFont();
 	Canvas.DrawText(names[1]);
