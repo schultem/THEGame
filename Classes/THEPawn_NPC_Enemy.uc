@@ -5,6 +5,7 @@ class THEPawn_NPC_Enemy extends Pawn
 var DynamicLightEnvironmentComponent LightEnvironment;
 var String speciesName;
 var AnimNodeSlot TestSlot;
+var AnimNodeBlend IdleSlot;
 var bool bInBattle;
 var bool bFainted;
 var Rotator targetRotation;
@@ -18,9 +19,17 @@ simulated event PostBeginPlay()
 function Tick(float Delta)
 {
 	super.Tick(Delta);
-	if (bInBattle)
+	if (bInBattle || bFainted)
 	{
 		SetRotation(RInterpTo(Rotation,targetRotation,Delta,90000,true));
+	}
+	if (bFainted)
+	{
+		IdleSlot.SetBlendTarget(1.0f, 0.1f);
+	}
+	else
+	{
+		IdleSlot.SetBlendTarget(0.0f, 0.1f);
 	}
 }
 
@@ -31,6 +40,7 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
     if (SkelComp == Mesh)
     {
         TestSlot = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
+		IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
     }
 }
 

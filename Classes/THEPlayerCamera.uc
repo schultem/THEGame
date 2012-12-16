@@ -84,7 +84,7 @@ function UpdateViewTarget(out TViewTarget OutVT, float DeltaTime)
 
 defaultproperties
 {
-   CamOffset=(X=25.0,Y=0.0,Z=25.0)
+   CamOffset=(X=25.0,Y=0,Z=35.0)
    CurrentCameraScale=1.0
    CameraScale=9.0
    CameraScaleMin=3.0

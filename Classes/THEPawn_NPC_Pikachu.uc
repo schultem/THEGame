@@ -7,6 +7,7 @@ var bool bInBattle;
 var Rotator targetRotation;
 
 var AnimNodeSlot TestSlot;
+var AnimNodeBlend IdleSlot;
 
 simulated event PostBeginPlay()
 {
@@ -21,6 +22,7 @@ function Tick(float Delta)
 	{
 		SetRotation(RInterpTo(Rotation,targetRotation,Delta,90000,true));
 	}
+	IdleSlot.SetBlendTarget(0.0f, 0.1f);
 }
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
@@ -30,6 +32,7 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
     if (SkelComp == Mesh)
     {
         TestSlot = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
+		IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
     }
 }
 

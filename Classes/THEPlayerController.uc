@@ -305,6 +305,7 @@ function PCTimer()
 					RegainPlayerControl();
 			        EnemyPokemon.bFainted  = true;
 			        EnemyPokemon.bInBattle = false;
+					FaintEnemyPokemon(); //Play faint animation and switch idle animation to faint
 			        bPlayerPokemonVictory  = false;
 			        bInBattle = false;
 				}
@@ -391,6 +392,7 @@ function PCTimer()
 					bPlayerAttackAnimStarted = true;
 					bEnemyAttackAnimStarted = false;
 					StartPlayerPokemonAnimation();
+					StartEnemyPokemonFlinch();
 				}
 			}
 			else
@@ -400,6 +402,7 @@ function PCTimer()
 					bEnemyAttackAnimStarted = true;
 					bPlayerAttackAnimStarted = false;
 					StartEnemyPokemonAnimation();
+					StartPlayerPokemonFlinch();
 				}
 			}
 			
@@ -429,6 +432,7 @@ function PCTimer()
 						{
 							bEnemyAttackAnimStarted = true;
 							StartEnemyPokemonAnimation();
+							StartPlayerPokemonFlinch();
 							bPlayerAttackAnimStarted = false;
 						}
 				    }
@@ -488,6 +492,7 @@ function PCTimer()
 						{
 							bPlayerAttackAnimStarted = true;
 							StartPlayerPokemonAnimation();
+							StartEnemyPokemonFlinch();
 							bEnemyAttackAnimStarted = false;
 						}
 				    }
@@ -1380,7 +1385,7 @@ function ApplyEnemyStatusAilments()
 				{
 					currentSelectedBattlePokemon.paralyzed = true;
 					currentSelectedBattlePokemon.SpeedStat = currentSelectedBattlePokemon.SpeedStat*0.25;
-					currentSelectedBattlePokemon.Accuracy  = currentSelectedBattlePokemon.Accuracy*0.25;
+					currentSelectedBattlePokemon.Accuracy  = currentSelectedBattlePokemon.Accuracy*0.75;
 					THEHud(myHUD).SetPlayerStatus("paralyzed!");
 				}
 				else
@@ -2476,6 +2481,21 @@ function StartEnemyPokemonAnimation()
 	StartPokemonParticleComponent(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName, followerLocation, enemyLocation, enemyParticleRotation);
 }
 
+function StartPlayerPokemonFlinch()
+{
+	Follower.TestSlot.PlayCustomAnim('Flinch',1.f);
+}
+
+function StartEnemyPokemonFlinch()
+{
+	EnemyPokemon.TestSlot.PlayCustomAnim('Flinch',1.f);
+}
+
+function FaintEnemyPokemon()
+{
+	//just blend to the idle fainted position in enemy pawn class
+	//EnemyPokemon.TestSlot.PlayCustomAnim('Faint',1.f);
+}
 
 function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator spawnParticleRotation)
 {
@@ -2498,6 +2518,17 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_QuickAttack', targetLocation, spawnParticleRotation);
 	}
+	if (attackName == "Swift")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Swift', targetLocation, spawnParticleRotation);
+	}
+	if (attackName == "Thunder")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunder', targetLocation, spawnParticleRotation);
+	}
+
 }
 
 function StopPokemonParticleComponent()

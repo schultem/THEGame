@@ -3,6 +3,33 @@ class THEPawn extends Pawn;
 
 var DynamicLightEnvironmentComponent LightEnvironment;
 
+var AnimNodeSlot TestSlot; //Test slot is used to play custom animations
+var AnimNodeBlend IdleSlot;
+
+simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
+{
+    super.PostInitAnimTree(SkelComp);
+ 
+    if (SkelComp == Mesh)
+    {
+        TestSlot = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
+		IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
+    }
+}
+
+function Tick(float Delta)
+{
+	super.Tick(Delta);
+	if (THEPlayerController(Controller).bInBattle)
+	{
+		IdleSlot.SetBlendTarget(1.0f, 0.1f);
+	}
+	else
+	{
+		IdleSlot.SetBlendTarget(0.0f, 0.1f);
+	}
+}
+
 defaultproperties
 {
    WalkingPct=+0.4
