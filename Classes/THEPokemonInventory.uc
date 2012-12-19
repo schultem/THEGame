@@ -57,6 +57,7 @@ var config int BaseSpeed;
 //Reset after each battle
 var config float Evasion;
 var config float Accuracy;
+var config float critStat;
 
 //Really shitty method..
 var config int FirstAttackLevel;  

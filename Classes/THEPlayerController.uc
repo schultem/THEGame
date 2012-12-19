@@ -781,6 +781,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 	local float percentageChanceToHit;
 	local float stab,weaknessResistance,level,attackStat,attackPower,defenseStat,randomNumber;
 	local float attackAccuracy, accuracy, evasion;
+	local bool stageAffectPlayer;
 	
 	attackAccuracy = currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].Accuracy;
 	accuracy       = currentSelectedBattlePokemon.Accuracy;
@@ -791,35 +792,50 @@ function bool CharacterPokemonAttackOpponentPokemon()
 	{
 	    if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].Power>0)
 	    {
-	        level=currentSelectedBattlePokemon.Level;
-	        attackStat=currentSelectedBattlePokemon.AttackStat;
-	        attackPower=currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].Power;
-	        defenseStat=EnemyPokemonDBInstance.DefenseStat;
-	        if (currentSelectedBattlePokemon.pokemonType == currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackType)
-	        {
-	            stab=1.5;
-	        }
-	    	else
-	    	{
-	    	    stab=1;
-	    	}
-	        weaknessResistance=CalculateTypeDifference(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackType,EnemyPokemonDBInstance.pokemonType);
-	        randomnumber=85+Rand(15);
-			`log("damageToDo, level="$level$" attackStat="$attackStat$" attackPower="$attackPower$" defenseStat="$defenseStat$" stab="$stab$" weaknessResistance="$weaknessResistance$" randomNumber="$randomNumber);
-	        damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*stab*weaknessResistance*(randomNumber/100));
-			
-			`log("damageToDo: "$damageToDo);
-	    	//damageToDo = int(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*stab*(randomNumber/100));
+			if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == "SuperFang")
+			{
+				stageMagnitude = EnemyPokemonDBInstance.currentHitPoints; //because I'm lazy and I don't know how to be sure that this will get cast to a float
+				damageToDo=FCeil(stageMagnitude/2);
+			}
+			else
+			{
+				level=currentSelectedBattlePokemon.Level;
+	            attackStat=currentSelectedBattlePokemon.AttackStat;
+	            attackPower=currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].Power;
+	            defenseStat=EnemyPokemonDBInstance.DefenseStat;
+	            if (currentSelectedBattlePokemon.pokemonType == currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackType)
+	            {
+	                stab=1.5;
+	            }
+	    	    else
+	    	    {
+	    	        stab=1;
+	    	    }
+	            weaknessResistance=CalculateTypeDifference(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackType,EnemyPokemonDBInstance.pokemonType);
+	            randomnumber=85+Rand(15);
+			    `log("damageToDo, level="$level$" attackStat="$attackStat$" attackPower="$attackPower$" defenseStat="$defenseStat$" stab="$stab$" weaknessResistance="$weaknessResistance$" randomNumber="$randomNumber);
+	            damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*stab*weaknessResistance*(randomNumber/100));
+			    //calculate crit chance
+			    randomnumber=Rand(currentSelectedBattlePokemon.critStat);
+			    if (randomnumber < currentSelectedBattlePokemon.BaseSpeed)
+			    {
+			    	//critical hit!
+			    	damageToDo=damageToDo*2;
+			    	THEHud(myHUD).SetPlayerStatus("Critical Hit!");
+			    }
+			    `log("damageToDo: "$damageToDo);
+			}
 	        EnemyPokemonDBInstance.currentHitPoints = EnemyPokemonDBInstance.currentHitPoints - damageToDo;
         }
 		else
 		{
 			//check for enemy stage effects
 		    stageMagnitude=currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageMag;
+			stageAffectPlayer=currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageAffectPlayer;
 			//display effect
 			if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName != "none")
 			{
-			    if (stageMagnitude>0)
+			    if (stageAffectPlayer)
 		        {
 					THEHud(myHUD).SetPlayerStatus(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName$" increased!");
 		        }
@@ -835,7 +851,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		        //do nothing
 		        break;
 		    case "accuracy":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.Accuracy = currentSelectedBattlePokemon.Accuracy*((3+stageMagnitude)/3);
 		    	}
@@ -845,7 +861,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "evasion":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.Evasion = currentSelectedBattlePokemon.Evasion*((3+stageMagnitude)/3);
 		    	}
@@ -855,7 +871,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "attack":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.AttackStat = currentSelectedBattlePokemon.AttackStat*((2+stageMagnitude)/2);
 		    	}
@@ -865,7 +881,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "defense":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.DefenseStat = currentSelectedBattlePokemon.DefenseStat*((2+stageMagnitude)/2);
 		    	}
@@ -875,7 +891,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "spAtk":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.SpAtkStat = currentSelectedBattlePokemon.SpAtkStat*((2+stageMagnitude)/2);
 		    	}
@@ -885,7 +901,7 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "spDef":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.SpDefStat = currentSelectedBattlePokemon.SpDefStat*((2+stageMagnitude)/2);
 		    	}
@@ -895,13 +911,23 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    	}
 		    	break;
 		    case "speed":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		currentSelectedBattlePokemon.SpeedStat = currentSelectedBattlePokemon.SpeedStat*((2+stageMagnitude)/2);
 		    	}
 		    	else
 		    	{
 		    		EnemyPokemonDBInstance.SpeedStat = EnemyPokemonDBInstance.SpeedStat*(2/(2-stageMagnitude));
+		    	}
+		    	break;
+			case "critical":
+		    	if (stageAffectPlayer)
+		    	{
+		    		currentSelectedBattlePokemon.critStat = currentSelectedBattlePokemon.critStat*stageMagnitude;
+		    	}
+		    	else
+		    	{
+		    		EnemyPokemonDBInstance.critStat = EnemyPokemonDBInstance.critStat*stageMagnitude;
 		    	}
 		    	break;
 		    }
@@ -920,6 +946,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 	local float percentageChanceToHit;
 	local float stab,weaknessResistance,level,attackStat,attackPower,defenseStat,randomNumber;
 	local float attackAccuracy, accuracy, evasion;
+	local bool stageAffectPlayer;
 	
 	attackAccuracy = EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].Accuracy;
 	accuracy       = EnemyPokemonDBInstance.Accuracy;
@@ -930,30 +957,50 @@ function bool OpponentPokemonAttackCharacterPokemon()
 	{
 		if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].Power>0)
 		{
-	        level=EnemyPokemonDBInstance.Level;
-	        attackStat=EnemyPokemonDBInstance.AttackStat;
-	        attackPower=EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].Power;
-	        defenseStat=currentSelectedBattlePokemon.DefenseStat;
-	        if (EnemyPokemonDBInstance.pokemonType == EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackType)
-	        {
-	            stab=1.5;
-	        }
-		    else
-		    {
-		        stab=1;
-		    }
-	        weaknessResistance=CalculateTypeDifference(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackType,currentSelectedBattlePokemon.pokemonType);
-	        randomnumber=85+Rand(15);
-			damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*stab*weaknessResistance*(randomNumber/100));	        currentSelectedBattlePokemon.currentHitPoints = currentSelectedBattlePokemon.currentHitPoints - damageToDo;
+			if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == "SuperFang")
+			{
+				stageMagnitude = currentSelectedBattlePokemon.currentHitPoints; //because I'm lazy and I don't know how to be sure that this will get cast to a float
+				damageToDo=FCeil(stageMagnitude/2);
+			}
+			else
+			{
+	            level=EnemyPokemonDBInstance.Level;
+	            attackStat=EnemyPokemonDBInstance.AttackStat;
+	            attackPower=EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].Power;
+	            defenseStat=currentSelectedBattlePokemon.DefenseStat;
+	            if (EnemyPokemonDBInstance.pokemonType == EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackType)
+	            {
+	                stab=1.5;
+	            }
+		        else
+		        {
+		            stab=1;
+		        }
+	            weaknessResistance=CalculateTypeDifference(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackType,currentSelectedBattlePokemon.pokemonType);
+	            randomnumber=85+Rand(15);
+			    damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*stab*weaknessResistance*(randomNumber/100));
+                
+			    //calculate crit chance
+			    randomnumber=Rand(EnemyPokemonDBInstance.critStat);
+			    if (randomnumber < EnemyPokemonDBInstance.BaseSpeed)
+			    {
+			    	//critical hit!
+			    	damageToDo=damageToDo*2;
+			    	THEHud(myHUD).SetEnemyStatus("Critical Hit!");
+			    }
+			}
+
+			currentSelectedBattlePokemon.currentHitPoints = currentSelectedBattlePokemon.currentHitPoints - damageToDo;
 		}
 		else
 		{
 			//check for enemy stage effects
 		    stageMagnitude=EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageMag;
+			stageAffectPlayer=EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageAffectPlayer;
 			//display effect
 			if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName != "none")
 			{
-			    if (stageMagnitude>0)
+			    if (stageAffectPlayer)
 		        {
 					THEHud(myHUD).SetEnemyStatus(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName$" increased!");
 		        }
@@ -969,7 +1016,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		        //do nothing
 		        break;
 		    case "accuracy":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.Accuracy = EnemyPokemonDBInstance.Accuracy*((3+stageMagnitude)/3);
 		    	}
@@ -979,7 +1026,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "evasion":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.Evasion = EnemyPokemonDBInstance.Evasion*((3+stageMagnitude)/3);
 		    	}
@@ -989,7 +1036,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "attack":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.AttackStat = EnemyPokemonDBInstance.AttackStat*((2+stageMagnitude)/2);
 		    	}
@@ -999,7 +1046,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "defense":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.DefenseStat = EnemyPokemonDBInstance.DefenseStat*((2+stageMagnitude)/2);
 		    	}
@@ -1009,7 +1056,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "spAtk":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.SpAtkStat = EnemyPokemonDBInstance.SpAtkStat*((2+stageMagnitude)/2);
 		    	}
@@ -1019,7 +1066,7 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "spDef":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.SpDefStat = EnemyPokemonDBInstance.SpDefStat*((2+stageMagnitude)/2);
 		    	}
@@ -1029,13 +1076,23 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    	}
 		    	break;
 		    case "speed":
-		    	if (stageMagnitude>0)
+		    	if (stageAffectPlayer)
 		    	{
 		    		EnemyPokemonDBInstance.SpeedStat = EnemyPokemonDBInstance.SpeedStat*((2+stageMagnitude)/2);
 		    	}
 		    	else
 		    	{
 		    		currentSelectedBattlePokemon.SpeedStat = currentSelectedBattlePokemon.SpeedStat*(2/(2-stageMagnitude));
+		    	}
+		    	break;
+			case "critical":
+		    	if (!stageAffectPlayer)
+		    	{
+		    		currentSelectedBattlePokemon.critStat = currentSelectedBattlePokemon.critStat*stageMagnitude;
+		    	}
+		    	else
+		    	{
+		    		EnemyPokemonDBInstance.critStat = EnemyPokemonDBInstance.critStat*stageMagnitude;
 		    	}
 		    	break;
 		    }
@@ -1206,6 +1263,7 @@ function ResetCharacterTemporaryBattleStats()
 		    `log("resetcharactertemporarybattlestats: "$char.pokemonInventory[i].pokemonSpecies);
 	        char.pokemonInventory[i].Evasion = 1;
 			char.pokemonInventory[i].Accuracy = 1;
+			char.pokemonInventory[i].critStat = 512;
 			
 			char.pokemonInventory[i].paralyzed = false;
 			

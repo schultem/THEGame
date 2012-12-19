@@ -256,6 +256,7 @@ function THEPokemonInventory createPokemonInventory(THEPokemon fromPokemon)
 	//Reset after each battle
 	inv.Evasion             = 1;
 	inv.Accuracy            = 1;
+	inv.critStat            = 512;
 	
 	//Really shitty method..
 	inv.FirstAttackLevel    = fromPokemon.FirstAttackLevel;
