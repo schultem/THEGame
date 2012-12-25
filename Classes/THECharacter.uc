@@ -10,6 +10,7 @@ class THECharacter extends Object config(THEGameState) perobjectconfig;
 var config string CharacterName;
 
 var config int characterBerries;
+var config int characterPokeballs;
 
 /**
  * The identifiers of the inventory pokemons.

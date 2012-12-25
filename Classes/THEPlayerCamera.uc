@@ -74,6 +74,11 @@ function UpdateViewTarget(out TViewTarget OutVT, float DeltaTime)
          {
             CamDirX *= square(cos(OutVT.POV.Rotation.Pitch * 0.0000958738)); // 0.0000958738 = 2*PI/65536
          }
+		 if (CamDirX.Z > 0)
+         {
+            CamDirX.Z = 0;
+         }
+
          OutVT.POV.Location = CamStart - CamDirX*CurrentCamOffset.X + CurrentCamOffset.Y*CamDirY + CurrentCamOffset.Z*CamDirZ;
       }
    }

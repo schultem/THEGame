@@ -120,8 +120,22 @@ function DrawHUD()
 	{
 	    lowerchars.Length=0;
 		lowerchars.addItem("Berry ("$ThePlayerController.char.characterBerries$")");
-		DrawLowerBoxes(8);
-		DrawLowerStringNameList(lowerchars,8);
+		lowerchars.addItem("Pokeball ("$ThePlayerController.char.characterPokeballs$")");
+		DrawLowerBoxes(4);
+		DrawLowerStringNameList(lowerchars,4);
+	}
+	if(ThePlayerController.bAttemptToCatchWildPokemon)
+	{
+		lowerchars.Length=0;
+		lowerchars.addItem("Throw Pokeball");
+		DrawLowerBoxes(1);
+		DrawLowerStringNameList(lowerchars,1);
+	}
+	if(ThePlayerController.bCaughtWildPokemon)
+	{
+		DrawSmallCenterBox();
+		DrawCenterTitle();
+		DrawPokemonCaughtInfo();
 	}
 }
 
@@ -172,10 +186,10 @@ function DrawCenterExp()
 		{
 			if (ThePlayerController.pokemonBattleParticipatedList[j] == ThePlayerController.char.pokemonInventory[i].pokemonSpecies)
 			{
-				battlersLevelList[k]=ThePlayerController.char.pokemonInventory[i].level;
-				battlersCurrentExp[k]=ThePlayerController.char.pokemonInventory[i].currentExperience;
-				battlersLowerExpBound[k]=ThePlayerController.GetSpeciesLowerExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
-				battlersUpperExpBound[k]=ThePlayerController.GetSpeciesUpperExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
+				battlersLevelList[j]=ThePlayerController.char.pokemonInventory[i].level;
+				battlersCurrentExp[j]=ThePlayerController.char.pokemonInventory[i].currentExperience;
+				battlersLowerExpBound[j]=ThePlayerController.GetSpeciesLowerExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
+				battlersUpperExpBound[j]=ThePlayerController.GetSpeciesUpperExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
 				k++;
 			}
 			if (ThePlayerController.pokemonBattleParticipatedList[j] == "")
@@ -183,7 +197,6 @@ function DrawCenterExp()
 				break;
 			}
 		}
-		//if k >= length of ThePlayerController.pokemonBattleParticipatedList break
 		if (k >= ArrayCount(ThePlayerController.pokemonBattleParticipatedList))
 		{
 			break;
@@ -222,6 +235,15 @@ function DrawPokemonWillLearnInfo()
 	{
 		Canvas.DrawText(ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].species$" will learn "$ThePlayerController.pokemonThatCanLearnNewMove[ThePlayerController.pokemonThatCanLearnNewMove.Length-1].attack);
 	}
+}
+
+function DrawPokemonCaughtInfo()
+{
+	Canvas.SetPos(SizeX/4+5,SizeY/5+3*SizeY/(7*5)+15);
+	Canvas.SetDrawColor(255,255,255,200);
+	Canvas.Font = class'Engine'.static.GetLargeFont();
+	Canvas.DrawText(ThePlayerController.EnemyPokemonDBInstance.pokemonSpecies$" has been added to your party!");
+
 }
 
 function DrawPokemonReplaceInfo()

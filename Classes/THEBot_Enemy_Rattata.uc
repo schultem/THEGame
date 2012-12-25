@@ -42,7 +42,7 @@ function AITimer()
 				`log("gotostatefainted");
 				GoToState('Fainted');
 			}
-			if (AIticks>=100) //wait 10 seconds after fainting to recover
+			if (AIticks>=100) //time to wait to recover
 			{
 				`log("aiticks>=10");
 				THEPawn_NPC_Enemy(Pawn).bFainted=false;
@@ -52,7 +52,7 @@ function AITimer()
 	}
 	else
 	{
-		//Stop and otate to face the pokemon the player has chosen
+		//Stop and rotate to face the pokemon the player has chosen
 		MyTarget=Pawn.Location;
 	    GoToState('BattlePosition');
 	}
@@ -74,9 +74,8 @@ function ChooseNewDestination()
 }
 
 function WaitToReachDestination()
-{   
-    //`log('WaitToReachDestination');
-	if (AIticks>100)
+{
+	if (AIticks>50)
 	{
 	    AIticks=0;
 	    ChooseNewDestination();
