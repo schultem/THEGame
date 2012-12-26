@@ -57,6 +57,7 @@ var bool bInBattle;
  */
 var class<THEPawn_NPC_Pikachu>  FollowerPawnClass;
 var THEPawn_NPC_Pikachu         Follower;
+var THEPawn_NPC_Friendly        Friendly;
 
 var ParticleSystemComponent spawnedParticleComponents;
 var Vector catchLocation;
@@ -157,6 +158,11 @@ function PCTimer()
 	{
 	    if (bSelectBattlePokemon)
 	    {
+			//Recall the friendly before giving the player a chance to send out another
+			if(Friendly != None)
+			{
+				Friendly.destroy();
+			}
 		    if (bNumeralPressed)
 	        {
 			    if (lastNumeral<=6 && lastNumeral > 0)
@@ -187,7 +193,8 @@ function PCTimer()
 									else
 									{
 										//spawn friendly at battle position
-										//SpawnFriendlyForBattle();
+										SpawnFriendlyForBattle();
+										RotateEnemyPokemonToFriendly();
 									}
 					    			
 					    			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
@@ -206,9 +213,27 @@ function PCTimer()
 					    				}
 					    			}
 					    			
-				                    bSelectBattlePokemon=false;
-					                bSelectBattleOption=true;
-					                //RegainPlayerControl();
+									if(Friendly != None)
+									{
+										bSelectBattlePokemon=false;
+										bSelectBattleOption=true;
+									}
+									else
+									{
+										//Friendly was not spawned, probably because something's in the way.  Make them choose a different pokemon or spot
+										bSelectBattlePokemon=true;
+										bSelectBattleOption=false;
+									}
+									if(char.pokemonInventory[i].pokemonSpecies=="Pikachu")
+									{
+										bSelectBattlePokemon=false;
+										bSelectBattleOption=true;
+									}
+									else
+									{
+										//player has not chosen to fight with Pikachu, tell the pawn to leave battle state
+										Follower.SetControllerBattleStatus(false);
+									}
 					    		}
 					    	}
 	                    }
@@ -226,6 +251,7 @@ function PCTimer()
 		{
 		    //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
 			//reset menus and temporary pokemon stats
+			Friendly.destroy();
 			ResetCharacterTemporaryBattleStats();
 			BattleStateExitCleanup();
 		}
@@ -263,6 +289,10 @@ function PCTimer()
 			{
 				RotateEnemyPokemonToFollower();
 				RotateFollowerPokemonToEnemy();
+			}
+			else
+			{
+				RotateEnemyPokemonToFriendly();
 			}
 		    if (bNumeralPressed)
 	        {
@@ -419,7 +449,7 @@ function PCTimer()
 			{
 				if (bPlayerAttackFirst)
 				{
-				    if (Follower.TestSlot.GetPlayedAnimation() == '')
+				    if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
 				    {
 				    	//animation was started and finished
 						//make sure the enemy did not faint after getting attacked, if so though, go to player victory
@@ -448,7 +478,7 @@ function PCTimer()
 				}
 				else
 				{
-					if (Follower.TestSlot.GetPlayedAnimation() == '')
+					if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
 				    {
 						//if both animations have finished, change state
 						//if enemy attacked first and resulted in a player faint, change state appropriately
@@ -490,7 +520,8 @@ function PCTimer()
 						{	
 							`log("player fainted, anim/control");
 							//This section defines what happens after a player pokemon has fainted
-							//bSelectBattleAttack=false;
+							//remove the fainted pokemon from battleparticipatedlist
+							RemoveFaintedFromParticipatedList(currentSelectedBattlePokemon.pokemonSpecies);
 							bSelectBattlePokemon=true;
 							//reset play animation flags
 							bEnemyAttackAnimStarted = false;
@@ -517,7 +548,6 @@ function PCTimer()
 						if (fainted == "player")
 						{
 							`log("player fainted, anim/control");
-							//bSelectBattleAttack=false;
 							bSelectBattlePokemon=true;
 							//reset play animation flags
 							bEnemyAttackAnimStarted = false;
@@ -697,53 +727,61 @@ function SpawnFollowerPikachu()
 {
 	`Log("Spawn Pikachu");
 	Follower = Spawn(FollowerPawnClass,,, Pawn.Location - vect(200,200,0), Pawn.Rotation);
-    return;
+	return;
 }
 
-//function SpawnFriendlyForBattle()
-//{
-//	local Vector enemyLocation,characterLocation;
-//	local Vector target;
-//	local float resultantx,resultanty;//x,y desired follower offset from player
-//	local float tx,ty;//x,y offset of enemy from player
-//	local float signx,signy;//there are four solutions to the equation, sign for the correct one
-//
-//	enemyLocation     = EnemyPokemon.Location;
-//	characterLocation = Pawn.Location;
-//
-//	tx=abs(enemyLocation.X-characterLocation.X);
-//	ty=abs(enemyLocation.Y-characterLocation.Y);
-//	
-//	if (enemyLocation.X<characterLocation.X)
-//	{
-//		signx=-1;
-//	}
-//	else
-//	{
-//		signx=1;
-//	}
-//
-//	if (enemyLocation.Y<characterLocation.Y)
-//	{
-//		signy=-1;
-//	}
-//	else
-//	{
-//		signy=1;
-//	}
-//
-//	//sometime maybe make 100 a variable based on collision boundaries, ie 100=>radiusCharacter+radiusFollower+1
-//	resultantx=signx*(100*tx)/(sqrt(ty*ty+tx*tx));
-//	resultanty=signy*(100*ty)/(sqrt(ty*ty+tx*tx));
-//	//target = the location between pawn and enemy, offset calculation from pawn
-//	target=characterLocation;
-//
-//	target.X=target.X+resultantx;
-//	target.Y=target.Y+resultanty;
-//	`Log("Spawn Friendly");
-//	//Friendly = Spawn(FriendlyPawnClass,,, target, rotator(enemyLocation - target));
-//	`log(Friendly.Location);
-//}
+function SpawnFriendlyForBattle()
+{
+	local Vector enemyLocation,characterLocation;
+	local Vector target;
+	local float resultantx,resultanty;//x,y desired follower offset from player
+	local float tx,ty;//x,y offset of enemy from player
+	local float signx,signy;//there are four solutions to the equation, sign for the correct one
+
+	enemyLocation     = EnemyPokemon.Location;
+	characterLocation = Pawn.Location;
+
+	tx=abs(enemyLocation.X-characterLocation.X);
+	ty=abs(enemyLocation.Y-characterLocation.Y);
+	
+	if (enemyLocation.X<characterLocation.X)
+	{
+		signx=-1;
+	}
+	else
+	{
+		signx=1;
+	}
+
+	if (enemyLocation.Y<characterLocation.Y)
+	{
+		signy=-1;
+	}
+	else
+	{
+		signy=1;
+	}
+
+	//sometime maybe make 100 a variable based on collision boundaries, ie 100=>radiusCharacter+radiusFollower+1
+	resultantx=signx*(100*tx)/(sqrt(ty*ty+tx*tx));
+	resultanty=signy*(100*ty)/(sqrt(ty*ty+tx*tx));
+	//target = the location between pawn and enemy, offset calculation from pawn
+	target=characterLocation;
+
+	target.X=target.X+resultantx;
+	target.Y=target.Y+resultanty;
+	`Log("Spawn Friendly");
+	
+	//is there a goddamn way to dynamically load a class name..
+	switch(currentSelectedBattlePokemon.pokemonSpecies)
+	{
+		case "Rattata":
+			Friendly = Spawn(class'THEPawn_NPC_Rattata',,, target, rotator(enemyLocation - target));
+			break;
+	}
+	Friendly.targetRotation = rotator(enemyLocation - target);
+	`log(Friendly.Location);
+}
 
 function MoveFollowerForBattle()
 {
@@ -809,6 +847,19 @@ function RotateFollowerPokemonToEnemy()
     return;
 }
 
+function RotateFriendlyPokemonToEnemy()
+{
+	local Vector friendlyLocation,enemyLocation;
+	local Rotator targetRotation;
+	
+	friendlyLocation  = Follower.Location;
+	enemyLocation     = EnemyPokemon.Location;
+	
+	targetRotation = rotator(enemyLocation - friendlyLocation);
+	Friendly.targetRotation = targetRotation;
+    return;
+}
+
 function RotateEnemyPokemonToFollower()
 {
 	local Vector followerLocation,enemyLocation;
@@ -820,6 +871,20 @@ function RotateEnemyPokemonToFollower()
 	targetRotation = rotator(followerLocation - enemyLocation);
 	EnemyPokemon.targetRotation = targetRotation;
     return;
+}
+
+function RotateEnemyPokemonToFriendly()
+{
+	local Vector friendlyLocation,enemyLocation;
+	local Rotator targetRotation;
+	
+	friendlyLocation  = friendly.Location;
+	enemyLocation     = EnemyPokemon.Location;
+	
+	targetRotation = rotator(friendlyLocation - enemyLocation);
+	EnemyPokemon.targetRotation = targetRotation;
+    return;
+
 }
 
 function RotateEnemyPokemonToPlayer()
@@ -908,6 +973,10 @@ function BattleStateExitCleanup()
 	bAttemptToCatchWildPokemon=false;
 	bInBattle=false;
 	EnemyPokemon.bInBattle=false;
+	if(Friendly!=None)
+	{
+		Friendly.destroy();
+	}
 	Follower.SetControllerBattleStatus(false);
     return;
 }
@@ -1767,6 +1836,22 @@ function UpdatePlayerPartyExperience()
    return;
 }
 
+//Shifts fainted pokemon name out of the list
+function RemoveFaintedFromParticipatedList(String pokemonSpecies)
+{
+	local int i,j;
+	for (i=0; i<ArrayCount(pokemonBattleParticipatedList);++i)
+	{
+		if (pokemonBattleParticipatedList[i]==pokemonSpecies)
+		{
+			for(j=i;j<(ArrayCount(pokemonBattleParticipatedList)-1);++j)
+			{
+				pokemonBattleParticipatedList[j]=pokemonBattleParticipatedList[j+1];
+			}
+		}
+	}
+}
+
 function UpdatePlayerPartyLevelAndStats()
 {
 	local int i,nextLevel;
@@ -1943,7 +2028,8 @@ function bool CatchSuccess()
 	
 	p0=statusAilment/(ballMod+1);
 	p1=((EnemyPokemonDBInstance.catchRate+1)/(ballMod+1))*((f+1)/256.f);
-	p2=1-((  (abs(EnemyPokemon.Location.X-catchLocation.X)+abs(EnemyPokemon.Location.Y-catchLocation.Y))/2  )/25.f);
+	//50 determines the accuracy of the players catch emitter down to 50 units away between the catch location and the enemy pokemon location
+	p2=1-((  (abs(EnemyPokemon.Location.X-catchLocation.X)+abs(EnemyPokemon.Location.Y-catchLocation.Y))/2  )/50.f);
 	
 	if (p2<0){p2=0;}
 	`log("f: "$f);
@@ -2738,43 +2824,99 @@ function StartPlayerPokemonAnimation()
 	local Vector followerLocation,enemyLocation;
 	local Rotator playerParticleRotation;
 	
-	followerLocation  = Follower.Location;
+	if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	{
+		followerLocation  = Follower.Location;
+	}
+	else
+	{
+		followerLocation = Friendly.Location;
+	}
 	enemyLocation     = EnemyPokemon.Location;
 	
 	playerParticleRotation = rotator(enemyLocation - followerLocation);
 	
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FirstAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack1',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack1',1.f);
+		}
 	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SecondAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack2',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack2',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack2',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.ThirdAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack3',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack3',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack3',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FourthAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack4',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack4',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack4',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.FifthAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack5',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack5',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack5',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SixthAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack6',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack6',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack6',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.SeventhAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack7',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack7',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack7',1.f);
+		}	}
 	if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == currentSelectedBattlePokemon.EighthAttackName)
 	{
-		Follower.TestSlot.PlayCustomAnim('Attack8',1.f);
-	}
+		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+		{
+			Follower.TestSlot.PlayCustomAnim('Attack8',1.f);
+		}
+		else
+		{
+			Friendly.TestSlot.PlayCustomAnim('Attack8',1.f);
+		}	}
 
 	StartPokemonParticleComponent(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName, enemyLocation, followerLocation, playerParticleRotation);
 	return;
@@ -2785,7 +2927,15 @@ function StartEnemyPokemonAnimation()
 	local Vector followerLocation,enemyLocation;
 	local Rotator enemyParticleRotation;
 	
-	followerLocation  = Follower.Location;
+	if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	{
+		followerLocation  = Follower.Location;
+	}
+	else
+	{
+		followerLocation = Friendly.Location;
+	}
+
 	enemyLocation     = EnemyPokemon.Location;
 	
 	enemyParticleRotation = rotator(followerLocation - enemyLocation);
@@ -2829,7 +2979,14 @@ function StartEnemyPokemonAnimation()
 
 function StartPlayerPokemonFlinch()
 {
-	Follower.TestSlot.PlayCustomAnim('Flinch',1.f);
+	if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	{
+		Follower.TestSlot.PlayCustomAnim('Flinch',1.f);
+	}
+	else
+	{
+		Friendly.TestSlot.PlayCustomAnim('Flinch',1.f);
+	}
 	return;
 }
 
