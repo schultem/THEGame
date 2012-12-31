@@ -5,6 +5,7 @@ var DynamicLightEnvironmentComponent LightEnvironment;
 
 var AnimNodeSlot TestSlot; //Test slot is used to play custom animations
 var AnimNodeBlend IdleSlot;
+var AnimNodeBlend BattleSlot;
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 {
@@ -13,7 +14,8 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
     if (SkelComp == Mesh)
     {
         TestSlot = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
-		IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
+        BattleSlot= AnimNodeBlend(Mesh.FindAnimNode('BattleSlot'));
+        IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
     }
 }
 
@@ -23,20 +25,22 @@ function Tick(float Delta)
 	if (THEPlayerController(Controller).bInBattle)
 	{
 		IdleSlot.SetBlendTarget(1.0f, 0.1f);
+                BattleSlot.SetBlendTarget(0.0f, 0.1f);
 	}
 	else
 	{
 		IdleSlot.SetBlendTarget(0.0f, 0.1f);
+                BattleSlot.SetBlendTarget(0.0f, 0.1f);
 	}
 }
 
 defaultproperties
 {
-   WalkingPct=+0.4
-   CrouchedPct=+0.4
+   WalkingPct=+0.0
+   CrouchedPct=+0.0
    BaseEyeHeight=0
    EyeHeight=38.0
-   GroundSpeed=240.0
+   GroundSpeed=150.0
    AirSpeed=440.0
    WaterSpeed=220.0
    AccelRate=1024.0
@@ -57,9 +61,9 @@ defaultproperties
 
    Begin Object Class=SkeletalMeshComponent Name=WPawnSkeletalMeshComponent
        //Your Mesh Properties
-      SkeletalMesh=SkeletalMesh'THEGamePackage.SM_Red'
-      AnimTreeTemplate=AnimTree'THEGamePackage.AT_Red'
-      AnimSets(0)=AnimSet'THEGamePackage.AS_Red'
+      SkeletalMesh=SkeletalMesh'THEGamePackage.SM_Red2'
+      AnimTreeTemplate=AnimTree'THEGamePackage.AT_Red2'
+      AnimSets(0)=AnimSet'THEGamePackage.AS_Red2'
       Translation=(Z=-48.0)
       Scale=1.0
       //General Mesh Properties

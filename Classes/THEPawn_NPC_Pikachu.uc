@@ -62,7 +62,7 @@ defaultproperties
 {
   ControllerClass=class'THEBot_Pikachu'
 
-  GroundSpeed=240
+  GroundSpeed=150
   AccelRate=512.0
 
    Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
