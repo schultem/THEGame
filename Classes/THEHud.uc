@@ -186,10 +186,16 @@ function DrawCenterExp()
 		{
 			if (ThePlayerController.pokemonBattleParticipatedList[j] == ThePlayerController.char.pokemonInventory[i].pokemonSpecies)
 			{
+				//`log("j:"$j);
+				//`log("ThePlayerController.pokemonBattleParticipatedList[j]:"$ThePlayerController.pokemonBattleParticipatedList[j]);
 				battlersLevelList[j]=ThePlayerController.char.pokemonInventory[i].level;
+				//`log("battlersLevelList:"$battlersLevelList[j]);
 				battlersCurrentExp[j]=ThePlayerController.char.pokemonInventory[i].currentExperience;
-				battlersLowerExpBound[j]=ThePlayerController.GetSpeciesLowerExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
-				battlersUpperExpBound[j]=ThePlayerController.GetSpeciesUpperExpBoundByLevel(ThePlayerController.char.pokemonInventory[i].pokemonSpecies,battlersLevelList[k]);
+				//`log("battlersCurrentExp:"$battlersCurrentExp[j]);
+				battlersLowerExpBound[j]=ThePlayerController.GetSpeciesLowerExpBoundByLevel(ThePlayerController.pokemonBattleParticipatedList[j],battlersLevelList[j]);
+				//`log("battlersLowerExpBound:"$battlersLowerExpBound[j]);
+				battlersUpperExpBound[j]=ThePlayerController.GetSpeciesUpperExpBoundByLevel(ThePlayerController.pokemonBattleParticipatedList[j],battlersLevelList[j]);
+				//`log("battlersUpperExpBound:"$battlersUpperExpBound[j]);
 				k++;
 			}
 			if (ThePlayerController.pokemonBattleParticipatedList[j] == "")
@@ -209,15 +215,15 @@ function DrawCenterExp()
 		{
 			break;
 		}
-		ratio = (battlersCurrentExp[k]-battlersLowerExpBound[k])/(battlersUpperExpBound[k]-battlersLowerExpBound[k]);
+		ratio = (battlersCurrentExp[k]-battlersLowerExpBound[k])/((battlersUpperExpBound[k]-battlersLowerExpBound[k]));
 		//`log("current: "$battlersCurrentExp[k]$" lower: "$battlersLowerExpBound[k]$" upper: "$battlersUpperExpBound[k]);
 	    Canvas.SetPos(SizeX/4+160,SizeY/5+(k+1)*3*SizeY/(7*5)+10);
-	    Canvas.SetDrawColor(0,50,220,100);
+	    Canvas.SetDrawColor(0,50,220,80);
 	    Canvas.DrawRect(SizeX/3,3*SizeY/(7*5)-10);
 	    
 	    Canvas.SetPos(SizeX/4+160,SizeY/5+(k+1)*3*SizeY/(7*5)+10);
-	    Canvas.SetDrawColor(0,50,220,100);
-	    Canvas.DrawRect(ratio*SizeX/3,3*SizeY/(7*5)-10);
+	    Canvas.SetDrawColor(0,50,220,120);
+	    Canvas.DrawRect((ratio*SizeX/3+1),3*SizeY/(7*5)-10);
 		
 		Canvas.SetPos(SizeX/4+5,SizeY/5+(k+1)*3*SizeY/(7*5)+5);
 	    Canvas.SetDrawColor(255,255,255,200);

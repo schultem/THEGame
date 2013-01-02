@@ -3,9 +3,11 @@ class THEPawn extends Pawn;
 
 var DynamicLightEnvironmentComponent LightEnvironment;
 
-var AnimNodeSlot TestSlot; //Test slot is used to play custom animations
+var AnimNodeSlot TestSlot; //Test slot is used to play custom animations while idle
 var AnimNodeBlend IdleSlot;
 var AnimNodeBlend BattleSlot;
+var AnimNodeBlend WalkSlot;
+var AnimNodeBlend RecallSlot;
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 {
@@ -13,9 +15,11 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
  
     if (SkelComp == Mesh)
     {
-        TestSlot = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
-        BattleSlot= AnimNodeBlend(Mesh.FindAnimNode('BattleSlot'));
-        IdleSlot = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
+        TestSlot   = AnimNodeSlot(Mesh.FindAnimNode('TestSlot'));
+        BattleSlot = AnimNodeBlend(Mesh.FindAnimNode('BattleSlot'));
+		WalkSlot   = AnimNodeBlend(Mesh.FindAnimNode('WalkSlot'));
+        IdleSlot   = AnimNodeBlend(Mesh.FindAnimNode('IdleSlot'));
+		RecallSlot = AnimNodeBlend(Mesh.FindAnimNode('RecallSlot'));
     }
 }
 
@@ -24,13 +28,45 @@ function Tick(float Delta)
 	super.Tick(Delta);
 	if (THEPlayerController(Controller).bInBattle)
 	{
-		IdleSlot.SetBlendTarget(1.0f, 0.1f);
-                BattleSlot.SetBlendTarget(0.0f, 0.1f);
+	    if (THEPlayerController(Controller).bAttemptToCatchWildPokemon)
+		{
+			IdleSlot.SetBlendTarget(1.0f, 0.1f);
+			BattleSlot.SetBlendTarget(1.0f, 0.1f);
+			WalkSlot.SetBlendTarget(1.0f, 0.1f);
+			RecallSlot.SetBlendTarget(0.0f, 0.1f);
+
+		}
+		else if (THEPlayerController(Controller).bSelectBattlePokemon || THEPlayerController(Controller).bShowPokeballCloud)
+		{
+			IdleSlot.SetBlendTarget(0.0f, 0.1f);
+			BattleSlot.SetBlendTarget(0.0f, 0.1f);
+			WalkSlot.SetBlendTarget(1.0f, 0.1f);
+			RecallSlot.SetBlendTarget(1.0f, 0.1f);
+		}
+		else
+		{
+			IdleSlot.SetBlendTarget(1.0f, 0.1f);
+			BattleSlot.SetBlendTarget(0.0f, 0.1f);
+			WalkSlot.SetBlendTarget(0.0f, 0.1f);
+			RecallSlot.SetBlendTarget(0.0f, 0.1f);
+		}
 	}
 	else
 	{
-		IdleSlot.SetBlendTarget(0.0f, 0.1f);
-                BattleSlot.SetBlendTarget(0.0f, 0.1f);
+		if (THEPlayerController(Controller).bShowPokeballCloud)
+		{
+		    IdleSlot.SetBlendTarget(0.0f, 0.1f);
+            BattleSlot.SetBlendTarget(0.0f, 0.1f);
+		    WalkSlot.SetBlendTarget(1.0f, 0.0f);
+		    RecallSlot.SetBlendTarget(1.0f, 0.1f);
+		}
+		else
+		{
+			IdleSlot.SetBlendTarget(0.0f, 0.1f);
+            BattleSlot.SetBlendTarget(0.0f, 0.1f);
+		    WalkSlot.SetBlendTarget(0.0f, 0.0f);
+		    RecallSlot.SetBlendTarget(0.0f, 0.1f);
+		}
 	}
 }
 
