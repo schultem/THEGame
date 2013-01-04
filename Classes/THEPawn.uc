@@ -30,11 +30,20 @@ function Tick(float Delta)
 	{
 	    if (THEPlayerController(Controller).bAttemptToCatchWildPokemon)
 		{
-			IdleSlot.SetBlendTarget(1.0f, 0.1f);
-			BattleSlot.SetBlendTarget(1.0f, 0.1f);
-			WalkSlot.SetBlendTarget(1.0f, 0.1f);
-			RecallSlot.SetBlendTarget(0.0f, 0.1f);
-
+			if (THEPlayerController(Controller).bShowPokeballCloud)
+			{
+				IdleSlot.SetBlendTarget(0.0f, 0.1f);
+			    BattleSlot.SetBlendTarget(0.0f, 0.1f);
+			    WalkSlot.SetBlendTarget(0.0f, 0.1f);
+			    RecallSlot.SetBlendTarget(0.0f, 0.1f);
+			}
+			else
+			{
+			    IdleSlot.SetBlendTarget(1.0f, 0.1f);
+			    BattleSlot.SetBlendTarget(1.0f, 0.1f);
+			    WalkSlot.SetBlendTarget(1.0f, 0.1f);
+			    RecallSlot.SetBlendTarget(0.0f, 0.1f);
+			}
 		}
 		else if (THEPlayerController(Controller).bSelectBattlePokemon || THEPlayerController(Controller).bShowPokeballCloud)
 		{

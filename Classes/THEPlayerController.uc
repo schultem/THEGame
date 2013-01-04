@@ -355,7 +355,7 @@ function PCTimer()
 					RegainPlayerControl();
 			        EnemyPokemon.bFainted  = true;
 			        EnemyPokemon.bInBattle = false;
-					FaintEnemyPokemon(); //Play faint animation and switch idle animation to faint
+					FaintEnemyPokemon(); //Switch idle animation to faint
 			        bPlayerPokemonVictory  = false;
 			        bInBattle = false;
 				}
@@ -1898,13 +1898,34 @@ function UpdatePlayerPartyLevelAndStats()
 	{
 		if (char.pokemonInventory[i].inPlayerParty)
 		{
-			//Update EVs
-			char.pokemonInventory[i].currentEVHP        += EnemyPokemonDBInstance.EVHP;
-			char.pokemonInventory[i].currentEVAttack    += EnemyPokemonDBInstance.EVAttack;
-			char.pokemonInventory[i].currentEVDefense   += EnemyPokemonDBInstance.EVDefense;
-			char.pokemonInventory[i].currentEVSpAttack  += EnemyPokemonDBInstance.EVSpAttack;
-			char.pokemonInventory[i].currentEVSpDefense += EnemyPokemonDBInstance.EVSpDefense;
-			char.pokemonInventory[i].currentEVSpeed     += EnemyPokemonDBInstance.EVSpeed;
+			//Update EVs, limit sum to 512
+			if ((char.pokemonInventory[i].currentEVHP+char.pokemonInventory[i].currentEVAttack+char.pokemonInventory[i].currentEVDefense+char.pokemonInventory[i].currentEVSpAttack+char.pokemonInventory[i].currentEVSpDefense+char.pokemonInventory[i].currentEVSpeed) <= 510)
+			{
+				if (char.pokemonInventory[i].currentEVHP<=255)
+				{
+					char.pokemonInventory[i].currentEVHP        += EnemyPokemonDBInstance.EVHP;
+				}
+			    if (char.pokemonInventory[i].currentEVAttack<=255)
+				{
+					char.pokemonInventory[i].currentEVAttack    += EnemyPokemonDBInstance.EVAttack;
+				}
+			    if (char.pokemonInventory[i].currentEVDefense<=255)
+				{
+					char.pokemonInventory[i].currentEVDefense   += EnemyPokemonDBInstance.EVDefense;
+				}
+			    if (char.pokemonInventory[i].currentEVSpAttack<=255)
+				{
+					char.pokemonInventory[i].currentEVSpAttack  += EnemyPokemonDBInstance.EVSpAttack;
+				}
+			    if (char.pokemonInventory[i].currentEVSpDefense<=255)
+				{
+					char.pokemonInventory[i].currentEVSpDefense += EnemyPokemonDBInstance.EVSpDefense;
+				}
+			    if (char.pokemonInventory[i].currentEVSpeed<=255)
+				{
+					char.pokemonInventory[i].currentEVSpeed     += EnemyPokemonDBInstance.EVSpeed;
+				}
+			}
 			
 			nextLevel=char.pokemonInventory[i].Level+1;
 			if (char.pokemonInventory[i].experienceType=="fast")
@@ -1926,6 +1947,19 @@ function UpdatePlayerPartyLevelAndStats()
    return;
 }
 
+function bool PokemonDoesNotKnowAttack(int inventory, String attack)
+{
+	local int i;
+	for (i=0 ; i < char.pokemonInventory[inventory].pokemonAttackInventory.Length; ++i)
+	{
+		if (char.pokemonInventory[inventory].pokemonAttackInventory[i].attackDisplayName == attack)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 function LevelUpInventory(Int i)
 {
 	local pokemonMove pM;
@@ -1940,49 +1974,49 @@ function LevelUpInventory(Int i)
 	    char.pokemonInventory[i].SpDefStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpDef + Sqrt(char.pokemonInventory[i].currentEVSpDefense)/8)*char.pokemonInventory[i].Level)/50+5;
 	    char.pokemonInventory[i].SpeedStat=((char.pokemonInventory[i].IVSpeed + char.pokemonInventory[i].BaseSpeed + Sqrt(char.pokemonInventory[i].currentEVSpeed)/8)*char.pokemonInventory[i].Level)/50+5;
 	    char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
-		if (char.pokemonInventory[i].Level == char.pokemonInventory[i].FirstAttackLevel)
+		if (char.pokemonInventory[i].Level == char.pokemonInventory[i].FirstAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].FirstAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].FirstAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SecondAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SecondAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].SecondAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].SecondAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].ThirdAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].ThirdAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].ThirdAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].ThirdAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FourthAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FourthAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].FourthAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].FourthAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FifthAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].FifthAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].FifthAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].FifthAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SixthAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SixthAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].SixthAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].SixthAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SeventhAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].SeventhAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].SeventhAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].SeventhAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
 		}
-		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].EighthAttackLevel)
+		if(char.pokemonInventory[i].Level == char.pokemonInventory[i].EighthAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].EighthAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].EighthAttackName;
