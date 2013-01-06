@@ -23,6 +23,7 @@ Struct pokemonMove
 	var String attack;
 };
 var array<pokemonMove> pokemonThatCanLearnNewMove;    //A list to keep track of each pokemon that recently leveled and can learn a new move
+var array<int> pokemonThatCanEvolve;                  //use inventory number
 
 var THEPawn_NPC_Enemy WildPokemon;
 var THEPawn_NPC_Enemy EnemyPokemon;
@@ -49,6 +50,7 @@ var bool bPlayBattleAnimations;
 var bool bPlayerAttackFirst;
 var bool bPlayerAttackAnimStarted;
 var bool bEnemyAttackAnimStarted;
+var bool bPartyPokemonCanEvolve;
 var bool bPartyPokemonCanLearnNewMove;
 var bool bPartyPokemonReplaceMove;
 var bool bAttemptToCatchWildPokemon;
@@ -96,11 +98,13 @@ simulated event PostBeginPlay()
 	bCaughtWildPokemon            = false;
 	bInBattle                     = false;
 	bshowPokeballCloud            = false;
+	bPartyPokemonCanEvolve        = false;
 	currentSelectedBattleAttack=0;
 	
 	TypeArrayInit();
 	pokemonBattleParticipatedInit();
 	pokemonThatCanLearnNewMoveInit();
+	pokemonThatCanEvolve.Length=0;
 
 	//Input
 	ResetNumeralPress();
@@ -133,7 +137,10 @@ function PCTimer()
 		pokeballCloudCount++;
 		if (pokeballCloudCount>18)
 		{
-			StopPokemonParticleComponent();
+			if (!bPlayBattleAnimations)
+			{
+				StopPokemonParticleComponent();
+			}
 			bShowPokeballCloud=false;
 		}
 	}
@@ -179,91 +186,105 @@ function PCTimer()
 			    if (lastNumeral<=6 && lastNumeral > 0)
 		        {
 					//Too close to the enemy to spawn/move
-					if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
+					if (EnemyPokemon!=None)
 					{
-						//Count number of pokemon in party
-					    j=0;
-	                    for (i = 0; i < char.pokemonInventory.Length; ++i)
-	                    {
-	                        if (char.pokemonInventory[i].inPlayerParty)
-	                    	{
-	                            j++;
-	                    	}
-					    	if (j==lastNumeral)
-					    	{
-					    	    if (char.pokemonInventory[i].isFainted==false)
-					    		{
-					    	        currentSelectedBattlePokemon=char.pokemonInventory[i];
-					    			//move or spawn player pokemon between player and enemy and set to idle
-					    			//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
-					    			if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
-					    			{
-					    				MoveFollowerForBattle();
-					    				RotateEnemyPokemonToFollower();
-					    			}
-									else
-									{
-										//spawn friendly at battle position
-										SpawnFriendlyForBattle();
-										RotateEnemyPokemonToFriendly();
-									}
-					    			
-					    			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
-					    			{
-					    				if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
+					    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
+					    {
+					    	//Count number of pokemon in party
+					        j=0;
+	                        for (i = 0; i < char.pokemonInventory.Length; ++i)
+	                        {
+	                            if (char.pokemonInventory[i].inPlayerParty)
+	                        	{
+	                                j++;
+	                        	}
+					        	if (j==lastNumeral)
+					        	{
+					        	    if (char.pokemonInventory[i].isFainted==false)
+					        		{
+					        	        currentSelectedBattlePokemon=char.pokemonInventory[i];
+					        			//move or spawn player pokemon between player and enemy and set to idle
+					        			//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
+					        			if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+					        			{
+					        				MoveFollowerForBattle();
+					        				RotateEnemyPokemonToFollower();
+					        			}
+					    				else
 					    				{
-					    					break;
+					    					//spawn friendly at battle position
+					    					SpawnFriendlyForBattle();
+					    					RotateEnemyPokemonToFriendly();
+					    				}
+					        			
+					        			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
+					        			{
+					        				if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
+					        				{
+					        					break;
+					        				}
+					        				else
+					        				{
+					        					if (pokemonBattleParticipatedList[k] == "")
+					        					{
+					        						pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
+					        						break;
+					        					}
+					        				}
+					        			}
+					        			
+					    				if(Friendly != None)
+					    				{
+					    					bSelectBattlePokemon=false;
+					    					bSelectBattleOption=true;
 					    				}
 					    				else
 					    				{
-					    					if (pokemonBattleParticipatedList[k] == "")
-					    					{
-					    						pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
-					    						break;
-					    					}
+					    					//Friendly was not spawned, probably because something's in the way.  Make them choose a different pokemon or spot
+					    					bSelectBattlePokemon=true;
+					    					bSelectBattleOption=false;
 					    				}
-					    			}
-					    			
-									if(Friendly != None)
-									{
-										bSelectBattlePokemon=false;
-										bSelectBattleOption=true;
-									}
-									else
-									{
-										//Friendly was not spawned, probably because something's in the way.  Make them choose a different pokemon or spot
-										bSelectBattlePokemon=true;
-										bSelectBattleOption=false;
-									}
-									if(currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
-									{
-										bSelectBattlePokemon=false;
-										bSelectBattleOption=true;
-									}
-									else
-									{
-										//player has not chosen to fight with Pikachu, tell the pawn to leave battle state
-										Follower.SetControllerBattleStatus(false);
-									}
-					    		}
-					    	}
-	                    }
+					    				if(currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+					    				{
+					    					bSelectBattlePokemon=false;
+					    					bSelectBattleOption=true;
+					    				}
+					    				else
+					    				{
+					    					//player has not chosen to fight with Pikachu, tell the pawn to leave battle state
+					    					Follower.SetControllerBattleStatus(false);
+					    				}
+					        		}
+					        	}
+	                        }
+					    }
+					    else
+					    {
+					    	//display a warning as to why you can't select here
+					    }
 					}
 					else
 					{
-						//display a warning as to why you can't select here
+						`log("EnemyPokemon=None for some reason, this is wrong");
 					}
 				}
 			ResetNumeralPress();
 			}
 	    }
 		//Run is manual
-		if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 500)
+		if (EnemyPokemon != None)
 		{
-		    //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
-			//reset menus and temporary pokemon stats
-			ResetCharacterTemporaryBattleStats();
-			BattleStateExitCleanup();
+		    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 500)
+		    {
+		        //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
+		    	//reset menus and temporary pokemon stats
+		    	ResetCharacterTemporaryBattleStats();
+		    	BattleStateExitCleanup();
+		    }
+		}
+		else
+		{
+			`log("EnemyPokemon=None for some reason, this is wrong");
 		}
 		
 	    if (bSelectBattleOption)
@@ -343,7 +364,13 @@ function PCTimer()
 		{
 		    if (bNumeralPressed)
 	        {
-				if (pokemonThatCanLearnNewMove.Length > 0)
+				if (pokemonThatCanEvolve.Length > 0)
+				{
+					bPartyPokemonCanEvolve = true;
+				   	bPlayerPokemonVictory  = false;
+					//keep in mind that evolutions are announced before new moves, so the state changes can get messy here
+				}
+				else if (pokemonThatCanLearnNewMove.Length > 0)
 				{
 					bPartyPokemonCanLearnNewMove = true;
 				   	bPlayerPokemonVictory  = false;
@@ -353,8 +380,11 @@ function PCTimer()
 					//Finally, set wild pokemon to fainted
 					BattleStateExitCleanup();
 					RegainPlayerControl();
-			        EnemyPokemon.bFainted  = true;
-			        EnemyPokemon.bInBattle = false;
+					if (EnemyPokemon != None)
+					{
+			            EnemyPokemon.bFainted  = true;
+			            EnemyPokemon.bInBattle = false;
+					}
 					FaintEnemyPokemon(); //Switch idle animation to faint
 			        bPlayerPokemonVictory  = false;
 			        bInBattle = false;
@@ -368,6 +398,52 @@ function PCTimer()
 			}
 		}
 		
+		if (bPartyPokemonCanEvolve)
+		{
+			if (pokemonThatCanEvolve.Length>0)
+			{
+				if (bNumeralPressed)
+				{
+					if (lastNumeral==1)
+					{
+						//accept evolution of last item in pokemonThatCanEvolve
+						evolvePokemon(pokemonThatCanEvolve[pokemonThatCanEvolve.Length-1]);
+						pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
+					}
+					else if (lastNumeral==2)
+					{
+						//cancel evolution of last item in pokemonThatCanEvolve
+						pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
+					}
+				}
+			ResetNumeralPress();
+			}
+			else
+			{
+				bPartyPokemonCanEvolve=false;
+				//exit evolve state
+				if (pokemonThatCanLearnNewMove.Length > 0)
+				{
+					bPartyPokemonCanLearnNewMove = true;
+				   	bPlayerPokemonVictory  = false;
+				}
+				else
+				{
+					//Finally, set wild pokemon to fainted
+					BattleStateExitCleanup();
+					RegainPlayerControl();
+					if (EnemyPokemon != None)
+					{
+			            EnemyPokemon.bFainted  = true;
+			            EnemyPokemon.bInBattle = false;
+					}
+					FaintEnemyPokemon(); //Switch idle animation to faint
+			        bPlayerPokemonVictory  = false;
+			        bInBattle = false;
+				}
+			}
+		}
+		
 		if (bPartyPokemonCanLearnNewMove)
 		{
 			if (pokemonThatCanLearnNewMove.Length == 0)
@@ -375,8 +451,11 @@ function PCTimer()
 				//Finally, set wild pokemon to fainted
 				BattleStateExitCleanup();
 				RegainPlayerControl();
-				EnemyPokemon.bFainted  = true;
-				EnemyPokemon.bInBattle = false;
+				if (EnemyPokemon != None)
+				{
+			        EnemyPokemon.bFainted  = true;
+			        EnemyPokemon.bInBattle = false;
+				}
 				bPartyPokemonCanLearnNewMove  = false;
 				bInBattle = false;
 			}
@@ -613,7 +692,10 @@ function PCTimer()
 					StopPokemonParticleComponent();
 					particleLocation=catchLocation;
 					//particleLocation.Z=particleLocation.Z-50;
-					spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Pokeballcloud', particleLocation, EnemyPokemon.rotation);
+					if (EnemyPokemon != None)
+					{
+						spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Pokeballcloud', particleLocation, EnemyPokemon.rotation);
+					}
 					bshowPokeballCloud=true;
 					pokeballCloudCount=0;
 					bCatchSuccess=CatchSuccess();
@@ -640,8 +722,6 @@ function PCTimer()
 				char.pokemonInventory[char.pokemonInventory.Length-1].currentExperience = GetSpeciesLowerExpBoundByLevel(char.pokemonInventory[char.pokemonInventory.Length-1].pokemonSpecies, char.pokemonInventory[char.pokemonInventory.Length-1].level);
 				BattleStateExitCleanup();
 				RegainPlayerControl();
-				RegainPlayerControl();
-			    EnemyPokemon.bInBattle = false;
 			    bCaughtWildPokemon = false;
 			    bInBattle = false;
 			ResetNumeralPress();
@@ -796,6 +876,10 @@ function SpawnFriendlyForBattle()
 		case "Rattata":
 			Friendly = Spawn(class'THEPawn_NPC_Rattata',,, target, rotator(enemyLocation - target));
 			break;
+		case "Raticate":
+			Friendly = Spawn(class'THEPawn_NPC_Raticate',,, target, rotator(enemyLocation - target));
+			break;
+
 	}
 
 	Friendly.targetRotation = rotator(enemyLocation - target);
@@ -988,17 +1072,29 @@ function BattleStateExitCleanup()
 	StopPokemonParticleComponent();
 	pokemonBattleParticipatedInit();
 	pokemonThatCanLearnNewMoveInit();
-	bShowPokeballCloud=false;
-	bEnemyAttackAnimStarted = false;
-	bPlayerAttackAnimStarted = false;
-	bPlayBattleAnimations = false;
-	bSelectBattlePokemon=false;
-	bSelectBattleOption=false;
-	bSelectBattleAttack=false;
-	bSelectBattleItems=false;
-	bAttemptToCatchWildPokemon=false;
-	bInBattle=false;
-	EnemyPokemon.bInBattle=false;
+	pokemonThatCanEvolve.Length=0;
+
+	bSelectBattlePokemon          = false;
+	bSelectBattleOption           = false;
+	bSelectBattleAttack           = false;
+	bSelectBattleItems            = false;
+	bPlayerPokemonVictory         = false;
+	bPlayBattleAnimations         = false;
+	bPlayerAttackFirst            = false;
+	bPlayerAttackAnimStarted      = false;
+	bEnemyAttackAnimStarted       = false;
+	bPartyPokemonCanLearnNewMove  = false;
+	bPartyPokemonReplaceMove      = false;
+	bAttemptToCatchWildPokemon    = false;
+	bCaughtWildPokemon            = false;
+	bInBattle                     = false;
+	bShowPokeballCloud            = false;
+	bPartyPokemonCanEvolve        = false;
+
+	if (EnemyPokemon != None)
+	{
+		EnemyPokemon.bInBattle=false;
+	}
 	RecallFriendly();
 	Follower.SetControllerBattleStatus(false);
     return;
@@ -1365,7 +1461,65 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		return true;
 	}
 	return false;
+}
+
+function evolvePokemon(int i)
+{
+	local THEPokemon inv;
 	
+	inv = gamestate.getPokemon(char.pokemonInventory[i].evolutionSpecies);
+
+	if (char.pokemonInventory[i].pokemonSpecies == char.pokemonInventory[i].pokemonDisplayName)
+	{
+		//default display name
+		char.pokemonInventory[i].pokemonDisplayName = inv.species;
+	}
+	char.pokemonInventory[i].pokemonSpecies       = inv.species;
+    char.pokemonInventory[i].pokemonDexNumber     = inv.pokemonDexNumber;
+    char.pokemonInventory[i].pokemonType          = inv.pokemonType;
+    char.pokemonInventory[i].evolutionSpecies     = inv.evolutionSpecies;
+    char.pokemonInventory[i].evolutionLevel       = inv.evolutionLevel;
+    char.pokemonInventory[i].experienceType       = inv.experienceType;
+    char.pokemonInventory[i].experienceYield      = inv.experienceYield;
+    char.pokemonInventory[i].EVHP                 = inv.EVHP;
+    char.pokemonInventory[i].EVAttack             = inv.EVAttack;
+    char.pokemonInventory[i].EVDefense            = inv.EVDefense;
+    char.pokemonInventory[i].EVSpAttack           = inv.EVSpAttack;
+    char.pokemonInventory[i].EVSpDefense          = inv.EVSpDefense;
+    char.pokemonInventory[i].EVSpeed              = inv.EVSpeed;
+    char.pokemonInventory[i].catchRate            = inv.catchRate;
+    char.pokemonInventory[i].BaseHP               = inv.BaseHP;
+    char.pokemonInventory[i].BaseAttack           = inv.BaseAttack;
+    char.pokemonInventory[i].BaseDefense          = inv.BaseDefense;
+    char.pokemonInventory[i].BaseSpAtk            = inv.BaseSpAtk;
+    char.pokemonInventory[i].BaseSpDef            = inv.BaseSpDef;
+    char.pokemonInventory[i].BaseSpeed            = inv.BaseSpeed;
+    char.pokemonInventory[i].FirstAttackLevel     = inv.FirstAttackLevel;
+    char.pokemonInventory[i].FirstAttackName      = inv.FirstAttackName;
+    char.pokemonInventory[i].SecondAttackLevel    = inv.SecondAttackLevel;
+    char.pokemonInventory[i].SecondAttackName     = inv.SecondAttackName;
+    char.pokemonInventory[i].ThirdAttackLevel     = inv.ThirdAttackLevel;
+    char.pokemonInventory[i].ThirdAttackName      = inv.ThirdAttackName;
+    char.pokemonInventory[i].FourthAttackLevel    = inv.FourthAttackLevel;
+    char.pokemonInventory[i].FourthAttackName     = inv.FourthAttackName;
+    char.pokemonInventory[i].FifthAttackLevel     = inv.FifthAttackLevel;
+    char.pokemonInventory[i].FifthAttackName      = inv.FifthAttackName;
+    char.pokemonInventory[i].SixthAttackLevel     = inv.SixthAttackLevel;
+    char.pokemonInventory[i].SixthAttackName      = inv.SixthAttackName;
+    char.pokemonInventory[i].SeventhAttackLevel   = inv.SeventhAttackLevel;
+    char.pokemonInventory[i].SeventhAttackName    = inv.SeventhAttackName;
+    char.pokemonInventory[i].EighthAttackLevel    = inv.EighthAttackLevel;
+    char.pokemonInventory[i].EighthAttackName     = inv.EighthAttackName;
+	
+	//update stats
+	char.pokemonInventory[i].maxHitPoints=((char.pokemonInventory[i].IVHP + char.pokemonInventory[i].BaseHP + Sqrt(char.pokemonInventory[i].currentEVHP)/8 + 50)*char.pokemonInventory[i].Level)/50+10;
+	char.pokemonInventory[i].AttackStat=((char.pokemonInventory[i].IVAttack + char.pokemonInventory[i].BaseAttack + Sqrt(char.pokemonInventory[i].currentEVAttack)/8)*char.pokemonInventory[i].Level)/50+5;
+	char.pokemonInventory[i].DefenseStat=((char.pokemonInventory[i].IVDefense + char.pokemonInventory[i].BaseDefense + Sqrt(char.pokemonInventory[i].currentEVDefense)/8)*char.pokemonInventory[i].Level)/50+5;
+	char.pokemonInventory[i].SpAtkStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpAtk + Sqrt(char.pokemonInventory[i].currentEVSpAttack)/8)*char.pokemonInventory[i].Level)/50+5;
+	char.pokemonInventory[i].SpDefStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpDef + Sqrt(char.pokemonInventory[i].currentEVSpDefense)/8)*char.pokemonInventory[i].Level)/50+5;
+	char.pokemonInventory[i].SpeedStat=((char.pokemonInventory[i].IVSpeed + char.pokemonInventory[i].BaseSpeed + Sqrt(char.pokemonInventory[i].currentEVSpeed)/8)*char.pokemonInventory[i].Level)/50+5;
+	char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
+	return;
 }
 
 //@return - 0 for failed, hopefully because the pokemon already has four moves.  otherwise something else is wrong..
@@ -1954,17 +2108,17 @@ function bool PokemonDoesNotKnowAttack(int inventory, String attack)
 	{
 		if (char.pokemonInventory[inventory].pokemonAttackInventory[i].attackDisplayName == attack)
 		{
-			return true;
+			return false;
 		}
 	}
-	return false;
+	return true;
 }
 
 function LevelUpInventory(Int i)
 {
 	local pokemonMove pM;
 	if (char.pokemonInventory[i].Level != 100)
-	{
+	{		
 	    //Update stats
 	    char.pokemonInventory[i].Level++;
 	    char.pokemonInventory[i].maxHitPoints=((char.pokemonInventory[i].IVHP + char.pokemonInventory[i].BaseHP + Sqrt(char.pokemonInventory[i].currentEVHP)/8 + 50)*char.pokemonInventory[i].Level)/50+10;
@@ -1973,7 +2127,7 @@ function LevelUpInventory(Int i)
 	    char.pokemonInventory[i].SpAtkStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpAtk + Sqrt(char.pokemonInventory[i].currentEVSpAttack)/8)*char.pokemonInventory[i].Level)/50+5;
 	    char.pokemonInventory[i].SpDefStat=((char.pokemonInventory[i].IVSpecial + char.pokemonInventory[i].BaseSpDef + Sqrt(char.pokemonInventory[i].currentEVSpDefense)/8)*char.pokemonInventory[i].Level)/50+5;
 	    char.pokemonInventory[i].SpeedStat=((char.pokemonInventory[i].IVSpeed + char.pokemonInventory[i].BaseSpeed + Sqrt(char.pokemonInventory[i].currentEVSpeed)/8)*char.pokemonInventory[i].Level)/50+5;
-	    char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
+	    //char.pokemonInventory[i].currentHitPoints=char.pokemonInventory[i].maxHitPoints;
 		if (char.pokemonInventory[i].Level == char.pokemonInventory[i].FirstAttackLevel && PokemonDoesNotKnowAttack(i, char.pokemonInventory[i].FirstAttackName))
 		{
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
@@ -2021,6 +2175,12 @@ function LevelUpInventory(Int i)
 			pM.species = char.pokemonInventory[i].pokemonSpecies;
 			pM.attack = char.pokemonInventory[i].EighthAttackName;
 			pokemonThatCanLearnNewMove.addItem(pM);
+		}
+
+		//check for evolution
+		if (char.pokemonInventory[i].Level >= char.pokemonInventory[i].evolutionLevel)
+		{
+			pokemonThatCanEvolve.addItem(i);
 		}
 
 		`log(pM.species$" can learn "$pM.attack);
@@ -2391,7 +2551,7 @@ function array<string> returnBattleChars()
 	//The player's selection
 	chars[0] = currentSelectedBattlePokemon.pokemonDisplayName;
 	//The wild pokemon
-	chars[1] = "Enemy "$EnemyPokemon.speciesName;
+	chars[1] = "Enemy "$EnemyPokemonDBInstance.pokemonSpecies;
 	return chars;
 }
 
@@ -3077,6 +3237,7 @@ function FaintEnemyPokemon()
 
 function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator spawnParticleRotation)
 {
+	StopPokemonParticleComponent();
 	if (attackName == "ThunderShock")
 	{
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thundershock', targetLocation, spawnParticleRotation);
@@ -3111,9 +3272,12 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 
 function StopPokemonParticleComponent()
 {
-	spawnedParticleComponents.SecondsBeforeInactive=0;
-    spawnedParticleComponents.DeactivateSystem();
-    spawnedParticleComponents.KillParticlesForced();
+	if (spawnedParticleComponents != None)
+	{
+	    spawnedParticleComponents.SecondsBeforeInactive=0;
+        spawnedParticleComponents.DeactivateSystem();
+        spawnedParticleComponents.KillParticlesForced();
+	}
 	return;
 }
 

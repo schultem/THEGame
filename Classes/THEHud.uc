@@ -137,6 +137,32 @@ function DrawHUD()
 		DrawCenterTitle();
 		DrawPokemonCaughtInfo();
 	}
+	if(ThePlayerController.bPartyPokemonCanEvolve)
+	{
+		lowerchars.Length=0;
+		lowerchars.addItem("Allow");
+		lowerchars.addItem("Deny");
+		DrawSmallCenterBox();
+		DrawPokemonEvolveInfo();
+		DrawLowerBoxes(2);
+		DrawLowerStringNameList(lowerchars,2);
+	}
+}
+ 
+function DrawPokemonEvolveInfo()
+{
+	Canvas.SetPos(SizeX/4+5,SizeY/5+5);
+	Canvas.SetDrawColor(255,255,255,200);
+	Canvas.Font = class'Engine'.static.GetLargeFont();
+	Canvas.DrawText("Evolution");
+	
+	if (ThePlayerController.pokemonThatCanEvolve.Length>0)
+	{
+	    Canvas.SetPos(SizeX/4+5,SizeY/5+3*SizeY/(7*5)+15);
+	    Canvas.SetDrawColor(255,255,255,200);
+	    Canvas.Font = class'Engine'.static.GetLargeFont();
+	    Canvas.DrawText(ThePlayerController.char.pokemonInventory[ThePlayerController.pokemonThatCanEvolve[ThePlayerController.pokemonThatCanEvolve.Length-1]].pokemonSpecies$" is trying to evolve!");
+	}
 }
 
 function DrawCenterBox()
