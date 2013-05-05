@@ -214,6 +214,7 @@ function THEPokemonInventory createPokemonInventory(THEPokemon fromPokemon)
 	inv.Level               = 1;
 	
 	inv.paralyzed           = false;
+	inv.confused            = false;
 	
 	//experience type can be slow, mediumslow, mediumfast, fast
 	inv.currentExperience   = 0;

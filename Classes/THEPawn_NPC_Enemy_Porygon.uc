@@ -32,7 +32,7 @@ defaultproperties
   Components.Add(NPCMesh0)
 
   Begin Object Name=CollisionCylinder
-      CollisionRadius=+0008.000000
+      CollisionRadius=+0016.000000
       CollisionHeight=+0044.000000
    End Object
    CylinderComponent=CollisionCylinder

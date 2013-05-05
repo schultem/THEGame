@@ -57,6 +57,7 @@ var bool bAttemptToCatchWildPokemon;
 var bool bCaughtWildPokemon;
 var bool bInBattle;
 var bool bCatchSuccess;
+var bool bPressEscape;
 
 /** 
  * FOLLOWER VARIABLES
@@ -80,7 +81,7 @@ var bool bNumeralPressed;
 simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
-	
+
 	//Initial "State"/GameControl Variables, maybe move these to default eventually
 	bSelectCharacter              = true;
 	bSelectBattlePokemon          = false;
@@ -132,639 +133,685 @@ function PCTimer()
 	local String fainted;
     local array<string> chars;
 	
-	if(bShowPokeballCloud)
+	if (!bPressEscape)
 	{
-		pokeballCloudCount++;
-		if (pokeballCloudCount>18)
-		{
-			if (!bPlayBattleAnimations)
-			{
-				StopPokemonParticleComponent();
-			}
-			bShowPokeballCloud=false;
-		}
-	}
-	
-	if (bSelectCharacter)
-	{
-	    GoToState('SelectCharacter');
-		if (bNumeralPressed)
+	    if(bShowPokeballCloud)
 	    {
-		    if (lastNumeral<=3 && lastNumeral > 0)
-		    {
-		        chars = gamestate.getCharacters();
-				if (lastNumeral<=chars.Length)
-				{
-		            char = gamestate.loadCharacter(chars[lastNumeral-1]);
-		    	    bSelectCharacter=false;
-				    
-				    for (i = 0; i < char.pokemonInventory.Length; ++i)
-				    {
-				        if (char.pokemonInventory[i].pokemonSpecies == "Pikachu")
-				    	{
-				    	    if (char.pokemonInventory[i].inPlayerParty)
-				    		{
-				    			SpawnFollowerPikachu();
-				    		}
-				    	}
-				    }
-				    RegainPlayerControl();
-		    	    //TeamMessage(none, "Loaded character "$chars[lastNumeral-1], 'none');
-				}
-		    }
-		ResetNumeralPress();
+	    	pokeballCloudCount++;
+	    	if (pokeballCloudCount>18)
+	    	{
+	    		if (!bPlayBattleAnimations)
+	    		{
+	    			StopPokemonParticleComponent();
+	    		}
+	    		bShowPokeballCloud=false;
+	    	}
 	    }
-	}
-    
-	if (bInBattle)
-	{
-	    if (bSelectBattlePokemon)
+	    
+	    if (bSelectCharacter)
 	    {
-			//Recall the friendly before giving the player a chance to send out another
-		    if (bNumeralPressed)
+	        GoToState('SelectCharacter');
+	    	if (bNumeralPressed)
 	        {
-			    if (lastNumeral<=6 && lastNumeral > 0)
-		        {
-					//Too close to the enemy to spawn/move
-					if (EnemyPokemon!=None)
-					{
-					    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
-					    {
-					    	//Count number of pokemon in party
-					        j=0;
-	                        for (i = 0; i < char.pokemonInventory.Length; ++i)
-	                        {
-	                            if (char.pokemonInventory[i].inPlayerParty)
-	                        	{
-	                                j++;
-	                        	}
-					        	if (j==lastNumeral)
-					        	{
-					        	    if (char.pokemonInventory[i].isFainted==false)
-					        		{
-					        	        currentSelectedBattlePokemon=char.pokemonInventory[i];
-					        			//move or spawn player pokemon between player and enemy and set to idle
-					        			//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
-					        			if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
-					        			{
-					        				MoveFollowerForBattle();
-					        				RotateEnemyPokemonToFollower();
-					        			}
-					    				else
-					    				{
-					    					//spawn friendly at battle position
-					    					SpawnFriendlyForBattle();
-					    					RotateEnemyPokemonToFriendly();
-					    				}
-					        			
-					        			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
-					        			{
-					        				if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
-					        				{
-					        					break;
-					        				}
-					        				else
-					        				{
-					        					if (pokemonBattleParticipatedList[k] == "")
-					        					{
-					        						pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
-					        						break;
-					        					}
-					        				}
-					        			}
-					        			
-					    				if(Friendly != None)
-					    				{
-					    					bSelectBattlePokemon=false;
-					    					bSelectBattleOption=true;
-					    				}
-					    				else
-					    				{
-					    					//Friendly was not spawned, probably because something's in the way.  Make them choose a different pokemon or spot
-					    					bSelectBattlePokemon=true;
-					    					bSelectBattleOption=false;
-					    				}
-					    				if(currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
-					    				{
-					    					bSelectBattlePokemon=false;
-					    					bSelectBattleOption=true;
-					    				}
-					    				else
-					    				{
-					    					//player has not chosen to fight with Pikachu, tell the pawn to leave battle state
-					    					Follower.SetControllerBattleStatus(false);
-					    				}
-					        		}
-					        	}
-	                        }
-					    }
-					    else
-					    {
-					    	//display a warning as to why you can't select here
-					    }
-					}
-					else
-					{
-						`log("EnemyPokemon=None for some reason, this is wrong");
-					}
-				}
-			ResetNumeralPress();
-			}
+	    	    if (lastNumeral<=3 && lastNumeral > 0)
+	    	    {
+	    	        chars = gamestate.getCharacters();
+	    			if (lastNumeral<=chars.Length)
+	    			{
+	    	            char = gamestate.loadCharacter(chars[lastNumeral-1]);
+	    	    	    bSelectCharacter=false;
+	    			    
+	    			    for (i = 0; i < char.pokemonInventory.Length; ++i)
+	    			    {
+	    			        if (char.pokemonInventory[i].pokemonSpecies == "Pikachu")
+	    			    	{
+	    			    	    if (char.pokemonInventory[i].inPlayerParty)
+	    			    		{
+	    			    			SpawnFollowerPikachu();
+	    			    		}
+	    			    	}
+	    			    }
+	    			    RegainPlayerControl();
+	    				ResetNumeralPress();
+	    	    	    //TeamMessage(none, "Loaded character "$chars[lastNumeral-1], 'none');
+	    			}
+	    			else
+	    			{
+	    				if (lastNumeral==1)
+	    				{
+	    					createChar("Red");
+	    					addPokemon("Pikachu");
+	    					char.pokemonInventory[0].inPlayerParty=true;
+	    					char.characterPokeballs=3;
+	    					char.characterBerries=3;
+	    					saveChar();
+	    				}
+	    				if (lastNumeral==2)
+	    				{
+	    					createChar("Blue");
+	    					addPokemon("Pikachu");
+	    					char.pokemonInventory[0].inPlayerParty=true;
+	    					char.characterPokeballs=3;
+	    					char.characterBerries=3;
+	    					saveChar();
+	    				}
+	    				if (lastNumeral==3)
+	    				{
+	    					createChar("Green");
+	    					addPokemon("Pikachu");
+	    					char.pokemonInventory[0].inPlayerParty=true;
+	    					char.characterPokeballs=3;
+	    					char.characterBerries=3;
+	    					saveChar();
+	    				}
+	    			}
+	    	    }
+	        }
 	    }
-		//Run is manual
-		if (EnemyPokemon != None)
-		{
-		    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 500)
-		    {
-		        //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
-		    	//reset menus and temporary pokemon stats
-		    	ResetCharacterTemporaryBattleStats();
-		    	BattleStateExitCleanup();
-		    }
-		}
-		else
-		{
-			`log("EnemyPokemon=None for some reason, this is wrong");
-		}
-		
-	    if (bSelectBattleOption)
-		{
-			if (bNumeralPressed)
+        
+	    if (bInBattle)
+	    {
+	        if (bSelectBattlePokemon)
 	        {
-			    if (lastNumeral==1)
-		        {
-				    //Goto fight option
-					bSelectBattleOption=false;
-					bSelectBattleAttack=true;
-				}
-				if (lastNumeral==2)
-		        {
-					RecallFriendly();
-				    //Goto Select Pokemon option
-					bSelectBattleOption=false;
-					bSelectBattlePokemon=true;
-				}
-				if (lastNumeral==3)
-		        {
-				    //Goto Items option
-					bSelectBattleOption=false;
-					bSelectBattleItems=true;
-				}
-			ResetNumeralPress();
-			}
-		}
-		
-	    if (bSelectBattleAttack)
-		{
-			//Continuously rotate to follower if the player switches around
-			if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
-			{
-				RotateEnemyPokemonToFollower();
-				RotateFollowerPokemonToEnemy();
-			}
-			else
-			{
-				RotateEnemyPokemonToFriendly();
-			}
-		    if (bNumeralPressed)
-	        {
-			    if (lastNumeral<=currentSelectedBattlePokemon.pokemonAttackInventory.Length && lastNumeral > 0)
-		        {
-				    currentSelectedBattleAttack=(lastNumeral-1);
-					CheckStatusAilments();
-				    ExchangeBattleAttacks();
-				    bSelectBattleAttack=false;
-					bPlayBattleAnimations = true;
-				}
-			ResetNumeralPress();
-			}
-		}
-
-	    if (bSelectBattleItems)
-		{
-			if (bNumeralPressed)
-	        {
-			    switch (lastNumeral)
-				{
-				case (1):
-					UseInventory("berry",currentSelectedBattlePokemon.pokemonSpecies);
-					break;
-				case (2):
-					UseInventory("pokeball",EnemyPokemonDBInstance.pokemonSpecies);
-					break;
-
-				}
-				//currentEnemySelectedBattleAttack=Rand(EnemyPokemonDBInstance.pokemonAttackInventory.Length);
-				//OpponentPokemonAttackCharacterPokemon();
-			ResetNumeralPress();
-			}
-		}
-		
-		if (bPlayerPokemonVictory)
-		{
-		    if (bNumeralPressed)
-	        {
-				if (pokemonThatCanEvolve.Length > 0)
-				{
-					bPartyPokemonCanEvolve = true;
-				   	bPlayerPokemonVictory  = false;
-					//keep in mind that evolutions are announced before new moves, so the state changes can get messy here
-				}
-				else if (pokemonThatCanLearnNewMove.Length > 0)
-				{
-					bPartyPokemonCanLearnNewMove = true;
-				   	bPlayerPokemonVictory  = false;
-				}
-				else
-				{
-					//Finally, set wild pokemon to fainted
-					BattleStateExitCleanup();
-					RegainPlayerControl();
-					if (EnemyPokemon != None)
-					{
-			            EnemyPokemon.bFainted  = true;
-			            EnemyPokemon.bInBattle = false;
-					}
-					FaintEnemyPokemon(); //Switch idle animation to faint
-			        bPlayerPokemonVictory  = false;
-			        bInBattle = false;
-				}
-			ResetNumeralPress();
-			}
-			else
-			{
-				//Put player in idle to wait for a button press while viewing experience
-			    GoToState('Idle');
-			}
-		}
-		
-		if (bPartyPokemonCanEvolve)
-		{
-			if (pokemonThatCanEvolve.Length>0)
-			{
-				if (bNumeralPressed)
-				{
-					if (lastNumeral==1)
-					{
-						//accept evolution of last item in pokemonThatCanEvolve
-						evolvePokemon(pokemonThatCanEvolve[pokemonThatCanEvolve.Length-1]);
-						pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
-					}
-					else if (lastNumeral==2)
-					{
-						//cancel evolution of last item in pokemonThatCanEvolve
-						pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
-					}
-				}
-			ResetNumeralPress();
-			}
-			else
-			{
-				bPartyPokemonCanEvolve=false;
-				//exit evolve state
-				if (pokemonThatCanLearnNewMove.Length > 0)
-				{
-					bPartyPokemonCanLearnNewMove = true;
-				   	bPlayerPokemonVictory  = false;
-				}
-				else
-				{
-					//Finally, set wild pokemon to fainted
-					BattleStateExitCleanup();
-					RegainPlayerControl();
-					if (EnemyPokemon != None)
-					{
-			            EnemyPokemon.bFainted  = true;
-			            EnemyPokemon.bInBattle = false;
-					}
-					FaintEnemyPokemon(); //Switch idle animation to faint
-			        bPlayerPokemonVictory  = false;
-			        bInBattle = false;
-				}
-			}
-		}
-		
-		if (bPartyPokemonCanLearnNewMove)
-		{
-			if (pokemonThatCanLearnNewMove.Length == 0)
-			{
-				//Finally, set wild pokemon to fainted
-				BattleStateExitCleanup();
-				RegainPlayerControl();
-				if (EnemyPokemon != None)
-				{
-			        EnemyPokemon.bFainted  = true;
-			        EnemyPokemon.bInBattle = false;
-				}
-				bPartyPokemonCanLearnNewMove  = false;
-				bInBattle = false;
-			}
-			else
-			{
-				if (bNumeralPressed)
-				{
-					for (i = 0; i < char.pokemonInventory.Length; ++i) //it might be best to replace this syntax used throughout the code with a single function that returns the inventory object, but again it doesn't really matter
-	                {
-						if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
-						{
-						    if (char.pokemonInventory[i].pokemonAttackInventory.Length<4)
-						    {
-								//add the attack
-								AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
-								//pop the last struct from pokemonThatCanLearnNewMove
-								pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
-						    }
-						    else
-						    {
-								//goto state bPartyPokemonReplaceMove
-								bPartyPokemonCanLearnNewMove = false;
-								bPartyPokemonReplaceMove = true;
-						    }
-						}
-					}
-				ResetNumeralPress();
-				}
-			}
-		}
-		
-		if(bPartyPokemonReplaceMove)
-		{
-				if (bNumeralPressed && lastNumeral>=1 && lastNumeral<=5)
-				{
-					if (lastNumeral != 5)
-					{
-						chars = GetPokemonToLearnAttackList();
-						for (i = 0; i < char.pokemonInventory.Length; ++i)
-	                    {
-							if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
-							{
-								removePokemonAttack(char.pokemonInventory[i].pokemonSpecies, chars[lastNumeral-1]);
-								AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
-							}
-						}
-					}
-					//pop the last struct from pokemonThatCanLearnNewMove
-					pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
-					bPartyPokemonCanLearnNewMove = true;
-					bPartyPokemonReplaceMove = false;
-					
-				ResetNumeralPress();
-				}
-		}
-		
-		if (bPlayBattleAnimations)
-		{
-			if(bPlayerAttackFirst)
-			{
-				if (!bPlayerAttackAnimStarted && !bEnemyAttackAnimStarted)
-				{
-					bPlayerAttackAnimStarted = true;
-					bEnemyAttackAnimStarted = false;
-					StartPlayerPokemonAnimation();
-					StartEnemyPokemonFlinch();
-				}
-			}
-			else
-			{
-				if (!bPlayerAttackAnimStarted && !bEnemyAttackAnimStarted)
-				{
-					bEnemyAttackAnimStarted = true;
-					bPlayerAttackAnimStarted = false;
-					StartEnemyPokemonAnimation();
-					StartPlayerPokemonFlinch();
-				}
-			}
-			
-			if(bPlayerAttackAnimStarted)
-			{
-				if (bPlayerAttackFirst)
-				{
-				    if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
-				    {
-				    	//animation was started and finished
-						//make sure the enemy did not faint after getting attacked, if so though, go to player victory
-						StopPokemonParticleComponent();
-						fainted = CheckFainted();
-						if (fainted=="enemy")
-						{	
-							//player animation has started, player attacked first, player animation finished, something fainted => enemy fainted
-							`log("enemy fainted, anim/control");
-							//This section defines what happens after an opposing pokemon has fainted
-							bPlayerPokemonVictory=true;
-							PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
-							//reset play animation flags
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-						}
-						else
-						{
-							bEnemyAttackAnimStarted = true;
-							StartEnemyPokemonAnimation();
-							StartPlayerPokemonFlinch();
-							bPlayerAttackAnimStarted = false;
-						}
-				    }
-				}
-				else
-				{
-					if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
-				    {
-						//if both animations have finished, change state
-						//if enemy attacked first and resulted in a player faint, change state appropriately
-						StopPokemonParticleComponent();
-						fainted = CheckFainted();
-						if (fainted == "enemy")
-						{
-							//player animation has started, enemy attacked first, player animation finished, enemy fainted => enemy fainted
-							`log("enemy fainted, anim/control");
-							bPlayerPokemonVictory=true;
-							PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
-							//reset play animation flags
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-						}
-						else
-						{
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-							bSelectBattleOption=true;
-						}
-					}
-				}
-			}
-			
-			if(bEnemyAttackAnimStarted)
-			{
-				if (!bPlayerAttackFirst)
-				{
-				    if (EnemyPokemon.TestSlot.GetPlayedAnimation() == '')
-				    {
-				    	//animation was started and finished
-						//make sure the player did not faint after getting attacked, if so though, go to enemy victory
-						StopPokemonParticleComponent();
-						fainted = CheckFainted();
-						if (fainted == "player")
-						{	
-							`log("player fainted, anim/control");
-							//This section defines what happens after a player pokemon has fainted
-							//remove the fainted pokemon from battleparticipatedlist
-							RemoveFaintedFromParticipatedList(currentSelectedBattlePokemon.pokemonSpecies);
-							RecallFriendly();
-							bSelectBattlePokemon=true;
-							//reset play animation flags
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-						}
-						else
-						{
-							bPlayerAttackAnimStarted = true;
-							StartPlayerPokemonAnimation();
-							StartEnemyPokemonFlinch();
-							bEnemyAttackAnimStarted = false;
-						}
-				    }
-				}
-				else
-				{
-					if (EnemyPokemon.TestSlot.GetPlayedAnimation() == '')
-				    {
-						//if both animations have finished, change state
-						//if player attacked first and resulted in an enemy faint, change state appropriately
-						StopPokemonParticleComponent();
-						fainted = CheckFainted();
-						if (fainted == "player")
-						{
-							`log("player fainted, anim/control");
-							RecallFriendly();
-							bSelectBattlePokemon=true;
-							//reset play animation flags
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-						}
-						else
-						{
-							bEnemyAttackAnimStarted = false;
-							bPlayerAttackAnimStarted = false;
-							bPlayBattleAnimations = false;
-							bSelectBattleOption=true;
-						}
-					}
-				}
-			}
-		}
-		if(bAttemptToCatchWildPokemon)
-		{
-			//use bPlayerAttackAnimStarted as a substate to see if the pawn catch animation has finished
-			if (bPlayerAttackAnimStarted)
-			{
-				if (THEPawn(Pawn).TestSlot.GetPlayedAnimation() == '')
-				{
-					if (bCatchSuccess)
-					{
-						bAttemptToCatchWildPokemon = false;
-						bPlayerAttackAnimStarted = false;
-						bCaughtWildPokemon = true;
-						GoToState('Idle');
-						StopPokemonParticleComponent();
-					}
-					else
-					{
-						bAttemptToCatchWildPokemon = false;
-						bPlayerAttackAnimStarted = false;
-						bSelectBattleOption = true;
-						RegainPlayerControl();
-						StopPokemonParticleComponent();
-					}
-				}
-			}
-			else
-			{
-			    UpdateCatchLocationEmitter();
-			    if (bNumeralPressed && lastNumeral == 1)
+	    		//Recall the friendly before giving the player a chance to send out another
+	    	    if (bNumeralPressed)
 	            {
-					GoToState('Catch');
-					THEPawn(Pawn).TestSlot.PlayCustomAnim('Catch',1.f);
-					StopPokemonParticleComponent();
-					particleLocation=catchLocation;
-					//particleLocation.Z=particleLocation.Z-50;
-					if (EnemyPokemon != None)
-					{
-						spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Pokeballcloud', particleLocation, EnemyPokemon.rotation);
-					}
-					bshowPokeballCloud=true;
-					pokeballCloudCount=0;
-					bCatchSuccess=CatchSuccess();
-					if (bCatchSuccess)
-					{
-						EnemyPokemon.destroy();
-					}
-			    	bPlayerAttackAnimStarted = true;
-			    ResetNumeralPress();
-			    }
-			}
-		}
-		if(bCaughtWildPokemon)
-		{
-			//create a pokemon character instance based on the wild pokemon
-			if (bNumeralPressed)
-	        {
-				//if number of pokemon in party is less than six
-				EnemyPokemonDBInstance.inPlayerParty=true;
-				//else
-				//EnemyPokemonDBInstance.bInParty=false
-				char.addPokemonInventory(EnemyPokemonDBInstance);
-				//Set the current experience for the added pokemon at the minimum for it's level
-				char.pokemonInventory[char.pokemonInventory.Length-1].currentExperience = GetSpeciesLowerExpBoundByLevel(char.pokemonInventory[char.pokemonInventory.Length-1].pokemonSpecies, char.pokemonInventory[char.pokemonInventory.Length-1].level);
-				BattleStateExitCleanup();
-				RegainPlayerControl();
-			    bCaughtWildPokemon = false;
-			    bInBattle = false;
-			ResetNumeralPress();
-			}
-		}
+	    		    if (lastNumeral<=6 && lastNumeral > 0)
+	    	        {
+	    				//Too close to the enemy to spawn/move
+	    				if (EnemyPokemon!=None)
+	    				{
+	    				    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
+	    				    {
+	    				    	//Count number of pokemon in party
+	    				        j=0;
+	                            for (i = 0; i < char.pokemonInventory.Length; ++i)
+	                            {
+	                                if (char.pokemonInventory[i].inPlayerParty)
+	                            	{
+	                                    j++;
+	                            	}
+	    				        	if (j==lastNumeral)
+	    				        	{
+	    				        	    if (char.pokemonInventory[i].isFainted==false)
+	    				        		{
+	    				        	        currentSelectedBattlePokemon=char.pokemonInventory[i];
+	    				        			//move or spawn player pokemon between player and enemy and set to idle
+	    				        			//if the selected pokemon is the follower, move the follower, stop it's movement, then rotate it to the enemy
+	    				        			if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	    				        			{
+	    				        				MoveFollowerForBattle();
+	    				        				RotateEnemyPokemonToFollower();
+	    				        			}
+	    				    				else
+	    				    				{
+	    				    					//spawn friendly at battle position
+	    				    					SpawnFriendlyForBattle();
+	    				    					RotateEnemyPokemonToFriendly();
+	    				    				}
+	    				        			
+	    				        			for(k=0;k<ArrayCount(pokemonBattleParticipatedList);++k)
+	    				        			{
+	    				        				if (pokemonBattleParticipatedList[k] == char.pokemonInventory[i].pokemonSpecies)
+	    				        				{
+	    				        					break;
+	    				        				}
+	    				        				else if (pokemonBattleParticipatedList[k] == "")
+	    				        				{
+	    				        					pokemonBattleParticipatedList[k] = char.pokemonInventory[i].pokemonSpecies;
+	    				        					break;
+	    				        				}
+	    				        			}
+	    				        			
+	    				    				if(Friendly != None)
+	    				    				{
+	    				    					bSelectBattlePokemon=false;
+	    				    					bSelectBattleOption=true;
+	    				    				}
+	    				    				else
+	    				    				{
+	    				    					//Friendly was not spawned, probably because something's in the way.  Make them choose a different pokemon or spot
+	    				    					bSelectBattlePokemon=true;
+	    				    					bSelectBattleOption=false;
+	    				    				}
+	    				    				if(currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	    				    				{
+	    				    					bSelectBattlePokemon=false;
+	    				    					bSelectBattleOption=true;
+	    				    				}
+	    				    				else
+	    				    				{
+	    				    					//player has not chosen to fight with Pikachu, tell the pawn to leave battle state
+	    				    					Follower.SetControllerBattleStatus(false);
+	    				    				}
+	    				        		}
+	    				        	}
+	                            }
+	    				    }
+	    				    else
+	    				    {
+	    				    	//display a warning as to why you can't select here
+	    				    }
+	    				}
+	    				else
+	    				{
+	    					`log("EnemyPokemon=None for some reason, this is wrong");
+	    				}
+	    			}
+	    		ResetNumeralPress();
+	    		}
+	        }
+	    	//Run is manual
+	    	if (EnemyPokemon != None)
+	    	{
+	    	    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 500)
+	    	    {
+	    	        //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
+	    	    	//reset menus and temporary pokemon stats
+	    	    	ResetCharacterTemporaryBattleStats();
+	    	    	BattleStateExitCleanup();
+	    	    }
+	    	}
+	    	else
+	    	{
+	    		`log("EnemyPokemon=None for some reason, this is wrong");
+	    	}
+	    	
+	        if (bSelectBattleOption)
+	    	{
+	    		if (bNumeralPressed)
+	            {
+	    		    if (lastNumeral==1)
+	    	        {
+	    			    //Goto fight option
+	    				bSelectBattleOption=false;
+	    				bSelectBattleAttack=true;
+	    			}
+	    			if (lastNumeral==2)
+	    	        {
+	    				RecallFriendly();
+	    			    //Goto Select Pokemon option
+	    				bSelectBattleOption=false;
+	    				bSelectBattlePokemon=true;
+	    			}
+	    			if (lastNumeral==3)
+	    	        {
+	    			    //Goto Items option
+	    				bSelectBattleOption=false;
+	    				bSelectBattleItems=true;
+	    			}
+	    		ResetNumeralPress();
+	    		}
+	    	}
+	    	
+	        if (bSelectBattleAttack)
+	    	{
+	    		//Continuously rotate to follower if the player switches around
+	    		if (currentSelectedBattlePokemon.pokemonSpecies=="Pikachu")
+	    		{
+	    			RotateEnemyPokemonToFollower();
+	    			RotateFollowerPokemonToEnemy();
+	    		}
+	    		else
+	    		{
+	    			RotateEnemyPokemonToFriendly();
+	    		}
+	    	    if (bNumeralPressed)
+	            {
+	    		    if (lastNumeral<=currentSelectedBattlePokemon.pokemonAttackInventory.Length && lastNumeral > 0)
+	    	        {
+	    			    currentSelectedBattleAttack=(lastNumeral-1);
+	    				CheckStatusAilments();
+	    			    ExchangeBattleAttacks();
+	    			    bSelectBattleAttack=false;
+	    				bPlayBattleAnimations = true;
+	    			}
+	    		ResetNumeralPress();
+	    		}
+	    	}
+        
+	        if (bSelectBattleItems)
+	    	{
+	    		if (bNumeralPressed)
+	            {
+	    		    switch (lastNumeral)
+	    			{
+	    			case (1):
+	    				UseInventory("berry",currentSelectedBattlePokemon.pokemonSpecies);
+	    				break;
+	    			case (2):
+	    				UseInventory("pokeball",EnemyPokemonDBInstance.pokemonSpecies);
+	    				break;
+        
+	    			}
+	    			//currentEnemySelectedBattleAttack=Rand(EnemyPokemonDBInstance.pokemonAttackInventory.Length);
+	    			//OpponentPokemonAttackCharacterPokemon();
+	    		ResetNumeralPress();
+	    		}
+	    	}
+	    	
+	    	if (bPlayerPokemonVictory)
+	    	{
+	    	    if (bNumeralPressed)
+	            {
+	    			if (pokemonThatCanEvolve.Length > 0)
+	    			{
+	    				bPartyPokemonCanEvolve = true;
+	    			   	bPlayerPokemonVictory  = false;
+	    				//keep in mind that evolutions are announced before new moves, so the state changes can get messy here
+	    			}
+	    			else if (pokemonThatCanLearnNewMove.Length > 0)
+	    			{
+	    				bPartyPokemonCanLearnNewMove = true;
+	    			   	bPlayerPokemonVictory  = false;
+	    			}
+	    			else
+	    			{
+	    				//Finally, set wild pokemon to fainted
+	    				BattleStateExitCleanup();
+	    				RegainPlayerControl();
+	    				if (EnemyPokemon != None)
+	    				{
+	    		            EnemyPokemon.bFainted  = true;
+	    		            EnemyPokemon.bInBattle = false;
+	    				}
+	    				FaintEnemyPokemon(); //Switch idle animation to faint
+	    		        bPlayerPokemonVictory  = false;
+	    		        bInBattle = false;
+	    			}
+	    		ResetNumeralPress();
+	    		}
+	    		else
+	    		{
+	    			//Put player in idle to wait for a button press while viewing experience
+	    		    GoToState('Idle');
+	    		}
+	    	}
+	    	
+	    	if (bPartyPokemonCanEvolve)
+	    	{
+	    		if (pokemonThatCanEvolve.Length>0)
+	    		{
+	    			if (bNumeralPressed)
+	    			{
+	    				if (lastNumeral==1)
+	    				{
+	    					//accept evolution of last item in pokemonThatCanEvolve
+	    					evolvePokemon(pokemonThatCanEvolve[pokemonThatCanEvolve.Length-1]);
+	    					pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
+	    				}
+	    				else if (lastNumeral==2)
+	    				{
+	    					//cancel evolution of last item in pokemonThatCanEvolve
+	    					pokemonThatCanEvolve.Length = pokemonThatCanEvolve.Length - 1;
+	    				}
+	    			}
+	    		ResetNumeralPress();
+	    		}
+	    		else
+	    		{
+	    			bPartyPokemonCanEvolve=false;
+	    			//exit evolve state
+	    			if (pokemonThatCanLearnNewMove.Length > 0)
+	    			{
+	    				bPartyPokemonCanLearnNewMove = true;
+	    			   	bPlayerPokemonVictory  = false;
+	    			}
+	    			else
+	    			{
+	    				//Finally, set wild pokemon to fainted
+	    				BattleStateExitCleanup();
+	    				RegainPlayerControl();
+	    				if (EnemyPokemon != None)
+	    				{
+	    		            EnemyPokemon.bFainted  = true;
+	    		            EnemyPokemon.bInBattle = false;
+	    				}
+	    				FaintEnemyPokemon(); //Switch idle animation to faint
+	    		        bPlayerPokemonVictory  = false;
+	    		        bInBattle = false;
+	    			}
+	    		}
+	    	}
+	    	
+	    	if (bPartyPokemonCanLearnNewMove)
+	    	{
+	    		if (pokemonThatCanLearnNewMove.Length == 0)
+	    		{
+	    			//Finally, set wild pokemon to fainted
+	    			BattleStateExitCleanup();
+	    			RegainPlayerControl();
+	    			if (EnemyPokemon != None)
+	    			{
+	    		        EnemyPokemon.bFainted  = true;
+	    		        EnemyPokemon.bInBattle = false;
+	    			}
+	    			bPartyPokemonCanLearnNewMove  = false;
+	    			bInBattle = false;
+	    		}
+	    		else
+	    		{
+	    			if (bNumeralPressed)
+	    			{
+	    				for (i = 0; i < char.pokemonInventory.Length; ++i) //it might be best to replace this syntax used throughout the code with a single function that returns the inventory object, but again it doesn't really matter
+	                    {
+	    					if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
+	    					{
+	    					    if (char.pokemonInventory[i].pokemonAttackInventory.Length<4)
+	    					    {
+	    							//add the attack
+	    							AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
+	    							//pop the last struct from pokemonThatCanLearnNewMove
+	    							pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
+	    					    }
+	    					    else
+	    					    {
+	    							//goto state bPartyPokemonReplaceMove
+	    							bPartyPokemonCanLearnNewMove = false;
+	    							bPartyPokemonReplaceMove = true;
+	    					    }
+	    					}
+	    				}
+	    			ResetNumeralPress();
+	    			}
+	    		}
+	    	}
+	    	
+	    	if(bPartyPokemonReplaceMove)
+	    	{
+	    			if (bNumeralPressed && lastNumeral>=1 && lastNumeral<=5)
+	    			{
+	    				if (lastNumeral != 5)
+	    				{
+	    					chars = GetPokemonToLearnAttackList();
+	    					for (i = 0; i < char.pokemonInventory.Length; ++i)
+	                        {
+	    						if (char.pokemonInventory[i].pokemonSpecies == pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1].species)
+	    						{
+	    							removePokemonAttack(char.pokemonInventory[i].pokemonSpecies, chars[lastNumeral-1]);
+	    							AddPokemonAttackForLevel(char.pokemonInventory[i].pokemonSpecies,char.pokemonInventory[i].Level);
+	    						}
+	    					}
+	    				}
+	    				//pop the last struct from pokemonThatCanLearnNewMove
+	    				pokemonThatCanLearnNewMove.removeItem(pokemonThatCanLearnNewMove[pokemonThatCanLearnNewMove.Length-1]);
+	    				bPartyPokemonCanLearnNewMove = true;
+	    				bPartyPokemonReplaceMove = false;
+	    				
+	    			ResetNumeralPress();
+	    			}
+	    	}
+	    	
+	    	if (bPlayBattleAnimations)
+	    	{
+	    		if(bPlayerAttackFirst)
+	    		{
+	    			if (!bPlayerAttackAnimStarted && !bEnemyAttackAnimStarted)
+	    			{
+	    				bPlayerAttackAnimStarted = true;
+	    				bEnemyAttackAnimStarted = false;
+	    				StartPlayerPokemonAnimation();
+	    				StartEnemyPokemonFlinch();
+	    			}
+	    		}
+	    		else
+	    		{
+	    			if (!bPlayerAttackAnimStarted && !bEnemyAttackAnimStarted)
+	    			{
+	    				bEnemyAttackAnimStarted = true;
+	    				bPlayerAttackAnimStarted = false;
+	    				StartEnemyPokemonAnimation();
+	    				StartPlayerPokemonFlinch();
+	    			}
+	    		}
+	    		
+	    		if(bPlayerAttackAnimStarted)
+	    		{
+	    			if (bPlayerAttackFirst)
+	    			{
+	    			    if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
+	    			    {
+	    			    	//animation was started and finished
+	    					//make sure the enemy did not faint after getting attacked, if so though, go to player victory
+	    					StopPokemonParticleComponent();
+	    					fainted = CheckFainted();
+	    					if (fainted=="enemy")
+	    					{	
+	    						//player animation has started, player attacked first, player animation finished, something fainted => enemy fainted
+	    						`log("enemy fainted, anim/control");
+	    						//This section defines what happens after an opposing pokemon has fainted
+	    						bPlayerPokemonVictory=true;
+	    						PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
+	    						//reset play animation flags
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    					}
+	    					else
+	    					{
+	    						bEnemyAttackAnimStarted = true;
+	    						StartEnemyPokemonAnimation();
+	    						StartPlayerPokemonFlinch();
+	    						bPlayerAttackAnimStarted = false;
+	    					}
+	    			    }
+	    			}
+	    			else
+	    			{
+	    				if ((currentSelectedBattlePokemon.pokemonSpecies=="Pikachu" && Follower.TestSlot.GetPlayedAnimation() == '') || (currentSelectedBattlePokemon.pokemonSpecies!="Pikachu" && Friendly.TestSlot.GetPlayedAnimation() == ''))
+	    			    {
+	    					//if both animations have finished, change state
+	    					//if enemy attacked first and resulted in a player faint, change state appropriately
+	    					StopPokemonParticleComponent();
+	    					fainted = CheckFainted();
+	    					if (fainted == "enemy")
+	    					{
+	    						//player animation has started, enemy attacked first, player animation finished, enemy fainted => enemy fainted
+	    						`log("enemy fainted, anim/control");
+	    						bPlayerPokemonVictory=true;
+	    						PlayerPokemonVictory(); //This is separate from the state defined by bPlayerPokemonVictory so it only gets performed once
+	    						//reset play animation flags
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    					}
+	    					else
+	    					{
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    						bSelectBattleOption=true;
+	    					}
+	    				}
+	    			}
+	    		}
+	    		
+	    		if(bEnemyAttackAnimStarted)
+	    		{
+	    			if (!bPlayerAttackFirst)
+	    			{
+	    			    if (EnemyPokemon.TestSlot.GetPlayedAnimation() == '')
+	    			    {
+	    			    	//animation was started and finished
+	    					//make sure the player did not faint after getting attacked, if so though, go to enemy victory
+	    					StopPokemonParticleComponent();
+	    					fainted = CheckFainted();
+	    					if (fainted == "player")
+	    					{	
+	    						`log("player fainted, anim/control");
+	    						//This section defines what happens after a player pokemon has fainted
+	    						//remove the fainted pokemon from battleparticipatedlist
+	    						RemoveFaintedFromParticipatedList(currentSelectedBattlePokemon.pokemonSpecies);
+	    						RecallFriendly();
+	    						bSelectBattlePokemon=true;
+	    						//reset play animation flags
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    					}
+	    					else
+	    					{
+	    						bPlayerAttackAnimStarted = true;
+	    						StartPlayerPokemonAnimation();
+	    						StartEnemyPokemonFlinch();
+	    						bEnemyAttackAnimStarted = false;
+	    					}
+	    			    }
+	    			}
+	    			else
+	    			{
+	    				if (EnemyPokemon.TestSlot.GetPlayedAnimation() == '')
+	    			    {
+	    					//if both animations have finished, change state
+	    					//if player attacked first and resulted in an enemy faint, change state appropriately
+	    					StopPokemonParticleComponent();
+	    					fainted = CheckFainted();
+	    					if (fainted == "player")
+	    					{
+	    						`log("player fainted, anim/control");
+	    						RecallFriendly();
+	    						bSelectBattlePokemon=true;
+	    						//reset play animation flags
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    					}
+	    					else
+	    					{
+	    						bEnemyAttackAnimStarted = false;
+	    						bPlayerAttackAnimStarted = false;
+	    						bPlayBattleAnimations = false;
+	    						bSelectBattleOption=true;
+	    					}
+	    				}
+	    			}
+	    		}
+	    	}
+	    	if(bAttemptToCatchWildPokemon)
+	    	{
+	    		//use bPlayerAttackAnimStarted as a substate to see if the pawn catch animation has finished
+	    		if (bPlayerAttackAnimStarted)
+	    		{
+	    			if (THEPawn(Pawn).TestSlot.GetPlayedAnimation() == '')
+	    			{
+	    				if (bCatchSuccess)
+	    				{
+	    					bAttemptToCatchWildPokemon = false;
+	    					bPlayerAttackAnimStarted = false;
+	    					bCaughtWildPokemon = true;
+	    					GoToState('Idle');
+	    					StopPokemonParticleComponent();
+	    				}
+	    				else
+	    				{
+	    					bAttemptToCatchWildPokemon = false;
+	    					bPlayerAttackAnimStarted = false;
+	    					bSelectBattleOption = true;
+	    					RegainPlayerControl();
+	    					StopPokemonParticleComponent();
+	    				}
+	    			}
+	    		}
+	    		else
+	    		{
+	    		    UpdateCatchLocationEmitter();
+	    		    if (bNumeralPressed && lastNumeral == 1)
+	                {
+	    				GoToState('Catch');
+	    				THEPawn(Pawn).TestSlot.PlayCustomAnim('Catch',1.f);
+	    				StopPokemonParticleComponent();
+	    				particleLocation=catchLocation;
+	    				//particleLocation.Z=particleLocation.Z-50;
+	    				if (EnemyPokemon != None)
+	    				{
+	    					spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Pokeballcloud', particleLocation, EnemyPokemon.rotation);
+	    				}
+	    				bshowPokeballCloud=true;
+	    				pokeballCloudCount=0;
+	    				bCatchSuccess=CatchSuccess();
+	    				if (bCatchSuccess)
+	    				{
+	    					EnemyPokemon.destroy();
+	    				}
+	    		    	bPlayerAttackAnimStarted = true;
+	    		    ResetNumeralPress();
+	    		    }
+	    		}
+	    	}
+	    	if(bCaughtWildPokemon)
+	    	{
+	    		//create a pokemon character instance based on the wild pokemon
+	    		if (bNumeralPressed)
+	            {
+	    			//if number of pokemon in party is less than six
+	    			EnemyPokemonDBInstance.inPlayerParty=true;
+	    			//else
+	    			//EnemyPokemonDBInstance.bInParty=false
+	    			char.addPokemonInventory(EnemyPokemonDBInstance);
+	    			//Set the current experience for the added pokemon at the minimum for it's level
+	    			char.pokemonInventory[char.pokemonInventory.Length-1].currentExperience = GetSpeciesLowerExpBoundByLevel(char.pokemonInventory[char.pokemonInventory.Length-1].pokemonSpecies, char.pokemonInventory[char.pokemonInventory.Length-1].level);
+	    			BattleStateExitCleanup();
+	    			RegainPlayerControl();
+	    		    bCaughtWildPokemon = false;
+	    		    bInBattle = false;
+	    		ResetNumeralPress();
+	    		}
+	    	}
+	    }
+	    else
+ 	    {
+            foreach WorldInfo.AllPawns(class'THEPawn_NPC_Enemy', WildPokemon)
+            {
+                if (WildPokemon != None && WildPokemon.bFainted == false)
+                {
+                    Distance = VSize2D(Pawn.Location - WildPokemon.Location);
+                    if (Distance < 400)
+	         	    {
+        
+	        			bInBattle = true;
+	    				bSelectBattlePokemon=true;
+	    				EnemyPokemon=WildPokemon;
+	    				EnemyPokemon.bInBattle=true;
+	    				//Create enemy instance, need a random level based on character level..
+	    				temp=GetCharacterMaxLevelPokemon();
+	    				//Make a calculation to determine the wild opponent's level
+	    				temp = Rand(wildLevelMultiplier*temp);
+	    				if (temp<=1)
+	    				{
+	    				    temp=1;
+	    				}
+	    				if (temp>100)
+	    				{
+	    				    temp=100;
+	    				}
+	    				EnemyPokemonDBInstance=CreateWildEnemyPokemonFromDB(temp);
+	    				//Add attacks to EnemyPokemonDBInstance
+	    				AddOpponentAttackForLevel();
+	    				
+	    				RotateEnemyPokemonToPlayer();
+	    				
+	        		    //GoToState('Idle');
+	         	    }
+                }
+            }
+	    }
 	}
 	else
- 	{
-        foreach WorldInfo.AllPawns(class'THEPawn_NPC_Enemy', WildPokemon)
-        {
-            if (WildPokemon != None && WildPokemon.bFainted == false)
-            {
-                Distance = VSize2D(Pawn.Location - WildPokemon.Location);
-                if (Distance < 400)
-	     	    {
-
-	    			bInBattle = true;
-					bSelectBattlePokemon=true;
-					EnemyPokemon=WildPokemon;
-					EnemyPokemon.bInBattle=true;
-					//Create enemy instance, need a random level based on character level..
-					temp=GetCharacterMaxLevelPokemon();
-					//Make a calculation to determine the wild opponent's level
-					temp = Rand(wildLevelMultiplier*temp);
-					if (temp<=1)
-					{
-					    temp=1;
-					}
-					if (temp>100)
-					{
-					    temp=100;
-					}
-					EnemyPokemonDBInstance=CreateWildEnemyPokemonFromDB(temp);
-					//Add attacks to EnemyPokemonDBInstance
-					AddOpponentAttackForLevel();
-					
-					RotateEnemyPokemonToPlayer();
-					
-	    		    //GoToState('Idle');
-	     	    }
-            }
-        }
+	{
+	    if (bNumeralPressed)
+	    {
+	    	if (lastNumeral==1)
+	    	{
+	    		bPressEscape=false;
+	    	}
+	    	if (lastNumeral==2)
+	    	{
+	    		ConsoleCommand("Quit");
+	    	}
+	    	ResetNumeralPress();
+	    }
 	}
+	
 	ResetNumeralPress();
     return;
 }
@@ -817,7 +864,6 @@ function PlayerPokemonVictory()
 	ResetCharacterTemporaryBattleStats();
 	UpdatePlayerPartyExperience();
 	UpdatePlayerPartyLevelAndStats();
-	//UpdatePlayerPartyEvolution();
     return;
 }
 
@@ -878,6 +924,9 @@ function SpawnFriendlyForBattle()
 			break;
 		case "Raticate":
 			Friendly = Spawn(class'THEPawn_NPC_Raticate',,, target, rotator(enemyLocation - target));
+			break;
+		case "Porygon":
+			Friendly = Spawn(class'THEPawn_NPC_Porygon',,, target, rotator(enemyLocation - target));
 			break;
 
 	}
@@ -1151,6 +1200,19 @@ function bool CharacterPokemonAttackOpponentPokemon()
 	
 	if ( (percentageChanceToHit > Rand(100)) || (attackAccuracy > 1))
 	{
+		if (currentSelectedBattlePokemon.confused && (Rand(100)<50))
+		{
+			//character attacks itself
+			THEHud(myHUD).SetPlayerStatus("Attacked itself in confusion!");
+			level=currentSelectedBattlePokemon.Level;
+			attackStat=currentSelectedBattlePokemon.AttackStat;
+	        attackPower=40;
+	        defenseStat=currentSelectedBattlePokemon.DefenseStat;
+			randomnumber=85+Rand(15);
+			damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*(randomNumber/100));
+			currentSelectedBattlePokemon.currentHitPoints = currentSelectedBattlePokemon.currentHitPoints - damageToDo;
+			return true;
+		}
 	    if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].Power>0)
 	    {
 			if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].attackDisplayName == "SuperFang")
@@ -1196,14 +1258,21 @@ function bool CharacterPokemonAttackOpponentPokemon()
 			//display effect
 			if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName != "none")
 			{
-			    if (stageAffectPlayer)
-		        {
-					THEHud(myHUD).SetPlayerStatus(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName$" increased!");
-		        }
-		        else
-		        {
-					THEHud(myHUD).SetEnemyStatus(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName$" decreased!");
-		        }
+				if (currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName == "type")
+				{
+					THEHud(myHUD).SetPlayerStatus("Type changed to "$EnemyPokemonDBInstance.pokemonType);
+				}
+				else
+				{
+			        if (stageAffectPlayer)
+		            {
+				    	THEHud(myHUD).SetPlayerStatus(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName$" increased!");
+		            }
+		            else
+		            {
+				    	THEHud(myHUD).SetEnemyStatus(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName$" decreased!");
+		            }
+				}
 			}
 			
 		    switch(currentSelectedBattlePokemon.pokemonAttackInventory[currentSelectedBattleAttack].stageName)
@@ -1291,8 +1360,17 @@ function bool CharacterPokemonAttackOpponentPokemon()
 		    		EnemyPokemonDBInstance.critStat = EnemyPokemonDBInstance.critStat*stageMagnitude;
 		    	}
 		    	break;
-		    }
-
+			case "type":
+				currentSelectedBattlePokemon.pokemonType = EnemyPokemonDBInstance.pokemonType;
+				break;
+			case "health":
+				currentSelectedBattlePokemon.currentHitPoints = currentSelectedBattlePokemon.currentHitPoints + currentSelectedBattlePokemon.maxHitPoints*(stageMagnitude)*((Rand(25)/25));
+				if (currentSelectedBattlePokemon.currentHitPoints > currentSelectedBattlePokemon.maxHitPoints)
+				{
+					currentSelectedBattlePokemon.currentHitPoints = currentSelectedBattlePokemon.maxHitPoints;
+				}
+				break;
+			}
 		}
 		return true;
 	}
@@ -1316,6 +1394,19 @@ function bool OpponentPokemonAttackCharacterPokemon()
 	
 	if ( (percentageChanceToHit > Rand(100)) || (attackAccuracy > 1))
 	{
+		if (EnemyPokemonDBInstance.confused && (Rand(100)<50))
+		{
+			//opponent attacks itself
+			THEHud(myHUD).SetEnemyStatus("Attacked itself in confusion!");
+			level=EnemyPokemonDBInstance.Level;
+			attackStat=EnemyPokemonDBInstance.AttackStat;
+	        attackPower=40;
+	        defenseStat=EnemyPokemonDBInstance.DefenseStat;
+			randomnumber=85+Rand(15);
+			damageToDo = FCeil(((((2*level/5+2)*attackStat*attackPower/defenseStat)/50)+2)*(randomNumber/100));
+			EnemyPokemonDBInstance.currentHitPoints = EnemyPokemonDBInstance.currentHitPoints - damageToDo;
+			return true;
+		}
 		if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].Power>0)
 		{
 			if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].attackDisplayName == "SuperFang")
@@ -1361,14 +1452,21 @@ function bool OpponentPokemonAttackCharacterPokemon()
 			//display effect
 			if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName != "none")
 			{
-			    if (stageAffectPlayer)
-		        {
-					THEHud(myHUD).SetEnemyStatus(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName$" increased!");
-		        }
-		        else
-		        {
-					THEHud(myHUD).SetPlayerStatus(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName$" decreased!");
-		        }
+				if (EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName == "type")
+				{
+					THEHud(myHUD).SetEnemyStatus("Type changed to "$currentSelectedBattlePokemon.pokemonType);
+				}
+				else
+				{
+			        if (stageAffectPlayer)
+		            {
+				    	THEHud(myHUD).SetEnemyStatus(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName$" increased!");
+		            }
+		            else
+		            {
+				    	THEHud(myHUD).SetPlayerStatus(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName$" decreased!");
+		            }
+				}
 			}
 			
 		    switch(EnemyPokemonDBInstance.pokemonAttackInventory[currentEnemySelectedBattleAttack].stageName)
@@ -1456,6 +1554,17 @@ function bool OpponentPokemonAttackCharacterPokemon()
 		    		EnemyPokemonDBInstance.critStat = EnemyPokemonDBInstance.critStat*stageMagnitude;
 		    	}
 		    	break;
+			case "type":
+			    EnemyPokemonDBInstance.pokemonType = currentSelectedBattlePokemon.pokemonType;
+				break;
+			case "health":
+				EnemyPokemonDBInstance.currentHitPoints = EnemyPokemonDBInstance.currentHitPoints + EnemyPokemonDBInstance.maxHitPoints*(stageMagnitude)*((Rand(25)/25));
+				if (EnemyPokemonDBInstance.currentHitPoints > EnemyPokemonDBInstance.maxHitPoints)
+				{
+					EnemyPokemonDBInstance.currentHitPoints = EnemyPokemonDBInstance.maxHitPoints;
+				}
+				break;
+
 		    }
 		}
 		return true;
@@ -1686,6 +1795,7 @@ function ResetCharacterTemporaryBattleStats()
 			char.pokemonInventory[i].critStat = 512;
 			
 			char.pokemonInventory[i].paralyzed = false;
+			char.pokemonInventory[i].confused  = false;
 			
 			//These may have been changed by stage attacks during battle
 			char.pokemonInventory[i].AttackStat=((char.pokemonInventory[i].IVAttack + char.pokemonInventory[i].BaseAttack + Sqrt(char.pokemonInventory[i].currentEVAttack)/8)*char.pokemonInventory[i].Level)/50+5;
@@ -1874,6 +1984,17 @@ function ApplyEnemyStatusAilments()
 					THEHud(myHUD).SetEnemyStatus("paralyzed!");
 				}
 				break;
+			case ("confused"):
+				if (currentSelectedBattlePokemon.confused == false)
+				{
+					currentSelectedBattlePokemon.confused = true;
+					THEHud(myHUD).SetPlayerStatus("confused!");
+				}
+				else
+				{
+					THEHud(myHUD).SetEnemyStatus("confused!");
+				}
+				break;
 			}
 		}
 	}
@@ -1883,7 +2004,27 @@ function ApplyEnemyStatusAilments()
 //Roll to remove status ailments
 function CheckStatusAilments()
 {
-    //none to roll for right now
+	local float temp;
+
+	//confusion
+	temp = Rand(100);
+	if (temp<25)
+	{
+		if (currentSelectedBattlePokemon.confused == true)
+		{
+			currentSelectedBattlePokemon.confused = false;
+			THEHud(myHUD).SetEnemyStatus("no longer confused!");
+		}
+	}
+	temp = Rand(100);
+	if (temp<25)
+	{
+		if (EnemyPokemonDBInstance.confused == true)
+		{
+		    EnemyPokemonDBInstance.confused = false;
+		    THEHud(myHUD).SetEnemyStatus("no longer confused!");
+		}
+	}
 }
 
 function String CheckFainted()
@@ -2117,6 +2258,7 @@ function bool PokemonDoesNotKnowAttack(int inventory, String attack)
 function LevelUpInventory(Int i)
 {
 	local pokemonMove pM;
+	local int nextLevel;
 	if (char.pokemonInventory[i].Level != 100)
 	{		
 	    //Update stats
@@ -2178,12 +2320,28 @@ function LevelUpInventory(Int i)
 		}
 
 		//check for evolution
-		if (char.pokemonInventory[i].Level >= char.pokemonInventory[i].evolutionLevel)
+		if (char.pokemonInventory[i].Level >= char.pokemonInventory[i].evolutionLevel && !char.checkPokemonInventorySpecies(char.pokemonInventory[i].evolutionSpecies))
 		{
 			pokemonThatCanEvolve.addItem(i);
 		}
 
 		`log(pM.species$" can learn "$pM.attack);
+	}
+	//check for more leveling
+	nextLevel=char.pokemonInventory[i].Level+1;
+	if (char.pokemonInventory[i].experienceType=="fast")
+	{
+		if (char.pokemonInventory[i].currentExperience >= (4*(nextLevel*nextLevel*nextLevel)/5))
+		{
+			LevelUpInventory(i);
+		}
+	}
+	if (char.pokemonInventory[i].experienceType=="mediumfast")
+	{
+		if (char.pokemonInventory[i].currentExperience >= ((nextLevel*nextLevel*nextLevel)))
+		{
+			LevelUpInventory(i);
+		}
 	}
 	return;
 }
@@ -2297,6 +2455,12 @@ function ResetNumeralPress()
 {
    lastNumeral   = 10; //Invalid
    bNumeralPressed = false;
+   return;
+}
+
+exec function PressEscape()
+{
+   bPressEscape = true;
    return;
 }
 
@@ -3267,6 +3431,12 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunder', targetLocation, spawnParticleRotation);
 	}
+	if (attackName == "FocusEnergy")
+	{
+		sourceLocation.Z=sourceLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Focusenergy', sourceLocation, spawnParticleRotation);
+	}
+
 	return;
 }
 

@@ -81,7 +81,7 @@ function Tick(float Delta)
 
 defaultproperties
 {
-   WalkingPct=+0.0
+   WalkingPct=+1.0 //Used as running percentage instead..
    CrouchedPct=+0.0
    BaseEyeHeight=0
    EyeHeight=38.0

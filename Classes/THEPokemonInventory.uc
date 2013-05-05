@@ -15,6 +15,7 @@ var config bool   isFainted;
 var config int    Level;
 
 var config bool paralyzed;
+var config bool confused;
 
 //experience type can be
 var config int currentExperience;

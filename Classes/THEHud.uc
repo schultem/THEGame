@@ -34,118 +34,131 @@ function DrawHUD()
 	local array<string> optionList;
     super.DrawHUD();
 	
-	if(ThePlayerController.bSelectCharacter)
+	if(!ThePlayerController.bPressEscape)
 	{
-	    lowerchars = ThePlayerController.returnChars();
-	    DrawWideScreen();
-		DrawLowerBoxes(3);
-		DrawLowerStringNameList(lowerchars,3);
-		DrawTitle("Select Character");
-		
-	}
-	if(ThePlayerController.bSelectBattlePokemon)
-	{
-	    lowerchars = ThePlayerController.returnPokemonChars();
-	    DrawWideScreen();
-		DrawLowerBoxes(6);
-		DrawLowerStringNameList(lowerchars,6);
-		DrawTitle("Select Pokemon");
+	    if(ThePlayerController.bSelectCharacter)
+	    {
+	        lowerchars = ThePlayerController.returnChars();
+	        DrawWideScreen();
+	    	DrawLowerBoxes(3);
+	    	DrawLowerStringNameList(lowerchars,3);
+	    	DrawTitle("Select Character");
+	    	
+	    }
+	    if(ThePlayerController.bSelectBattlePokemon)
+	    {
+	        lowerchars = ThePlayerController.returnPokemonChars();
+	        DrawWideScreen();
+	    	DrawLowerBoxes(6);
+	    	DrawLowerStringNameList(lowerchars,6);
+	    	DrawTitle("Select Pokemon");
+	    }
+	    else
+	    {
+	        if(ThePlayerController.bInBattle) //and not selecting a different pokemon
+	        {
+	    		//don't display or update any hud if animations are playing
+	    		if (!ThePlayerController.bPlayBattleAnimations)
+	    		{
+	    	        upperchars = ThePlayerController.returnBattleChars();
+	    		    DrawWideScreen();
+	    		    DrawUpperStringNameList(upperchars);
+	    		    DrawHitPoints();
+	    		    
+	    	        if (enemyStatusTimer > 0)
+	                {
+	                    enemyStatusTimer--;
+	                	DrawEnemyStatus(enemyStatus);
+	                }
+	                if (playerStatusTimer > 0)
+	                {
+	                    playerStatusTimer--;
+	                	DrawPlayerStatus(playerStatus);
+	                }
+	    		}
+	    		else
+	    		{
+	    			DrawWideScreen();
+	    		}
+	        }
+	    }
+	    if(ThePlayerController.bPlayerPokemonVictory)
+	    {
+	    	DrawCenterBox();
+	    	DrawCenterTitle();
+	    	DrawCenterExp();
+	    }
+	    if(ThePlayerController.bPartyPokemonCanLearnNewMove)
+	    {
+	    	DrawSmallCenterBox();
+	    	DrawCenterTitle();
+	    	DrawPokemonWillLearnInfo();
+	    }
+	    if(ThePlayerController.bPartyPokemonReplaceMove)
+	    {
+	    	lowerchars = ThePlayerController.GetPokemonToLearnAttackList();
+	    	lowerchars.addItem("Cancel");
+	    	DrawLowerBoxes(5);
+	    	DrawLowerStringNameList(lowerchars,5);
+	    	DrawSmallCenterBox();
+	    	DrawCenterTitle();
+	    	DrawPokemonReplaceInfo();
+	    }
+	    if(ThePlayerController.bSelectBattleOption)
+	    {
+	    	optionList[0]="Fight!";
+	    	optionList[1]="Select Pokemon";
+	    	optionList[2]="Items";
+	    	DrawLowerBoxes(3);
+	    	DrawLowerStringNameList(optionList,3);
+	    }
+	    if(ThePlayerController.bSelectBattleAttack)
+	    {
+	        lowerchars = ThePlayerController.returnAttackChars();
+	    	DrawLowerBoxes(4);
+	    	DrawLowerStringNameList(lowerchars,4);
+	    }
+	    if(ThePlayerController.bSelectBattleItems)
+	    {
+	        lowerchars.Length=0;
+	    	lowerchars.addItem("Berry ("$ThePlayerController.char.characterBerries$")");
+	    	lowerchars.addItem("Pokeball ("$ThePlayerController.char.characterPokeballs$")");
+	    	DrawLowerBoxes(4);
+	    	DrawLowerStringNameList(lowerchars,4);
+	    }
+	    if(ThePlayerController.bAttemptToCatchWildPokemon)
+	    {
+	    	lowerchars.Length=0;
+	    	lowerchars.addItem("Throw Pokeball");
+	    	DrawLowerBoxes(1);
+	    	DrawLowerStringNameList(lowerchars,1);
+	    }
+	    if(ThePlayerController.bCaughtWildPokemon)
+	    {
+	    	DrawSmallCenterBox();
+	    	DrawCenterTitle();
+	    	DrawPokemonCaughtInfo();
+	    }
+	    if(ThePlayerController.bPartyPokemonCanEvolve)
+	    {
+	    	lowerchars.Length=0;
+	    	lowerchars.addItem("Allow");
+	    	lowerchars.addItem("Deny");
+	    	DrawSmallCenterBox();
+	    	DrawPokemonEvolveInfo();
+	    	DrawLowerBoxes(2);
+	    	DrawLowerStringNameList(lowerchars,2);
+	    }
 	}
 	else
 	{
-	    if(ThePlayerController.bInBattle) //and not selecting a different pokemon
-	    {
-			//don't display or update any hud if animations are playing
-			if (!ThePlayerController.bPlayBattleAnimations)
-			{
-		        upperchars = ThePlayerController.returnBattleChars();
-			    DrawWideScreen();
-			    DrawUpperStringNameList(upperchars);
-			    DrawHitPoints();
-			    
-		        if (enemyStatusTimer > 0)
-	            {
-	                enemyStatusTimer--;
-	            	DrawEnemyStatus(enemyStatus);
-	            }
-	            if (playerStatusTimer > 0)
-	            {
-	                playerStatusTimer--;
-	            	DrawPlayerStatus(playerStatus);
-	            }
-			}
-			else
-			{
-				DrawWideScreen();
-			}
-	    }
-	}
-	if(ThePlayerController.bPlayerPokemonVictory)
-	{
-		DrawCenterBox();
-		DrawCenterTitle();
-		DrawCenterExp();
-	}
-	if(ThePlayerController.bPartyPokemonCanLearnNewMove)
-	{
-		DrawSmallCenterBox();
-		DrawCenterTitle();
-		DrawPokemonWillLearnInfo();
-	}
-	if(ThePlayerController.bPartyPokemonReplaceMove)
-	{
-		lowerchars = ThePlayerController.GetPokemonToLearnAttackList();
-		lowerchars.addItem("Cancel");
-		DrawLowerBoxes(5);
-		DrawLowerStringNameList(lowerchars,5);
-		DrawSmallCenterBox();
-		DrawCenterTitle();
-		DrawPokemonReplaceInfo();
-	}
-	if(ThePlayerController.bSelectBattleOption)
-	{
-		optionList[0]="Fight!";
-		optionList[1]="Select Pokemon";
-		optionList[2]="Items";
-		DrawLowerBoxes(3);
-		DrawLowerStringNameList(optionList,3);
-	}
-	if(ThePlayerController.bSelectBattleAttack)
-	{
-	    lowerchars = ThePlayerController.returnAttackChars();
-		DrawLowerBoxes(4);
-		DrawLowerStringNameList(lowerchars,4);
-	}
-	if(ThePlayerController.bSelectBattleItems)
-	{
-	    lowerchars.Length=0;
-		lowerchars.addItem("Berry ("$ThePlayerController.char.characterBerries$")");
-		lowerchars.addItem("Pokeball ("$ThePlayerController.char.characterPokeballs$")");
-		DrawLowerBoxes(4);
-		DrawLowerStringNameList(lowerchars,4);
-	}
-	if(ThePlayerController.bAttemptToCatchWildPokemon)
-	{
 		lowerchars.Length=0;
-		lowerchars.addItem("Throw Pokeball");
-		DrawLowerBoxes(1);
-		DrawLowerStringNameList(lowerchars,1);
-	}
-	if(ThePlayerController.bCaughtWildPokemon)
-	{
-		DrawSmallCenterBox();
-		DrawCenterTitle();
-		DrawPokemonCaughtInfo();
-	}
-	if(ThePlayerController.bPartyPokemonCanEvolve)
-	{
-		lowerchars.Length=0;
-		lowerchars.addItem("Allow");
-		lowerchars.addItem("Deny");
-		DrawSmallCenterBox();
-		DrawPokemonEvolveInfo();
-		DrawLowerBoxes(2);
-		DrawLowerStringNameList(lowerchars,2);
+		lowerchars.addItem("Keep playing");
+	    lowerchars.addItem("Quit");
+		DrawWideScreen();
+	    DrawLowerBoxes(2);
+	    DrawLowerStringNameList(lowerchars,2);
+	    DrawTitle("Pokemon Unreal");
 	}
 }
  
@@ -242,7 +255,7 @@ function DrawCenterExp()
 			break;
 		}
 		ratio = (battlersCurrentExp[k]-battlersLowerExpBound[k])/((battlersUpperExpBound[k]-battlersLowerExpBound[k]));
-		//`log("current: "$battlersCurrentExp[k]$" lower: "$battlersLowerExpBound[k]$" upper: "$battlersUpperExpBound[k]);
+		//`log("current: "$battlersCurrentExp[k]$" lower: "$battlersLowerExpBound[k]$" upper: "$battlersUpperExpBound[k]$"ratio: "$ratio);
 	    Canvas.SetPos(SizeX/4+160,SizeY/5+(k+1)*3*SizeY/(7*5)+10);
 	    Canvas.SetDrawColor(0,50,220,80);
 	    Canvas.DrawRect(SizeX/3,3*SizeY/(7*5)-10);
