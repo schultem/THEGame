@@ -70,7 +70,9 @@ function ChooseNewDestination()
     MyTarget.X = Pawn.Location.X + OffsetX;
     MyTarget.Y = Pawn.Location.Y + OffsetY;
     MyTarget.Z = Pawn.Location.Z;
-
+	
+    THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
+	
     GoToState('MoveAbout');
 }
 

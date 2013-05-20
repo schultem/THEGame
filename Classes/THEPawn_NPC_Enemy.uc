@@ -25,10 +25,11 @@ function Tick(float Delta)
 	}
 	if (bFainted)
 	{
-		IdleSlot.SetBlendTarget(1.0f, 0.1f);
+		IdleSlot.SetBlendTarget(1.0f, 0.0f);
 	}
 	else
 	{
+		SetRotation(RInterpTo(Rotation,targetRotation,Delta,90000,true));
 		IdleSlot.SetBlendTarget(0.0f, 0.1f);
 	}
 }

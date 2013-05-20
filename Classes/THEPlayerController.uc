@@ -180,28 +180,28 @@ function PCTimer()
 	    				if (lastNumeral==1)
 	    				{
 	    					createChar("Red");
-	    					addPokemon("Pikachu");
+	    					addPokemon("Porygon");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=3;
-	    					char.characterBerries=3;
+	    					char.characterPokeballs=20;
+	    					char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==2)
 	    				{
 	    					createChar("Blue");
-	    					addPokemon("Pikachu");
+	    					addPokemon("Porygon");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=3;
-	    					char.characterBerries=3;
+	    					char.characterPokeballs=20;
+	    					char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==3)
 	    				{
 	    					createChar("Green");
-	    					addPokemon("Pikachu");
+	    					addPokemon("Porygon");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=3;
-	    					char.characterBerries=3;
+	    					char.characterPokeballs=20;
+	    					char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    			}
@@ -221,7 +221,7 @@ function PCTimer()
 	    				//Too close to the enemy to spawn/move
 	    				if (EnemyPokemon!=None)
 	    				{
-	    				    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 300)
+	    				    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 350)
 	    				    {
 	    				    	//Count number of pokemon in party
 	    				        j=0;
@@ -928,7 +928,9 @@ function SpawnFriendlyForBattle()
 		case "Porygon":
 			Friendly = Spawn(class'THEPawn_NPC_Porygon',,, target, rotator(enemyLocation - target));
 			break;
-
+		case "Pidgey":
+			Friendly = Spawn(class'THEPawn_NPC_Pidgey',,, target, rotator(enemyLocation - target));
+			break;
 	}
 
 	Friendly.targetRotation = rotator(enemyLocation - target);
@@ -2237,6 +2239,14 @@ function UpdatePlayerPartyLevelAndStats()
 					LevelUpInventory(i);
 				}
 			}
+			if (char.pokemonInventory[i].experienceType=="mediumslow")
+			{
+				if (char.pokemonInventory[i].currentExperience >= ((6/5)*(nextLevel*nextLevel*nextLevel)-15*(nextLevel*nextLevel)+100*nextLevel -140))
+				{
+					LevelUpInventory(i);
+				}
+			}
+
 		}
 	}
    return;
@@ -2343,6 +2353,14 @@ function LevelUpInventory(Int i)
 			LevelUpInventory(i);
 		}
 	}
+	if (char.pokemonInventory[i].experienceType=="mediumslow")
+	{
+		if (char.pokemonInventory[i].currentExperience >= ((6/5)*(nextLevel*nextLevel*nextLevel)-15*(nextLevel*nextLevel)+100*nextLevel -140))
+		{
+			LevelUpInventory(i);
+		}
+	}
+
 	return;
 }
 
@@ -2362,6 +2380,10 @@ function int GetSpeciesLowerExpBoundByLevel(String species, int level)
 			if (char.pokemonInventory[i].experienceType=="mediumfast")
 			{
 				return ((level*level*level));
+			}
+			if (char.pokemonInventory[i].experienceType=="mediumslow")
+			{
+				return (((6/5)*(Level*Level*Level)-15*(Level*Level)+100*Level -140));
 			}
 		}
 	}
@@ -2384,6 +2406,10 @@ function int GetSpeciesUpperExpBoundByLevel(String species, int level)
 			if (char.pokemonInventory[i].experienceType=="mediumfast")
 			{
 				return ((level*level*level));
+			}
+			if (char.pokemonInventory[i].experienceType=="mediumslow")
+			{
+				return (((6/5)*(Level*Level*Level)-15*(Level*Level)+100*Level -140));
 			}
 		}
 	}
@@ -3431,10 +3457,15 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunder', targetLocation, spawnParticleRotation);
 	}
-	if (attackName == "FocusEnergy")
+	if (attackName == "FocusEnergy" || attackName == "Recover")
 	{
 		sourceLocation.Z=sourceLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Focusenergy', sourceLocation, spawnParticleRotation);
+	}
+	if (attackName == "PsyBeam")
+	{
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_PsyBeam', sourceLocation, spawnParticleRotation);
 	}
 
 	return;

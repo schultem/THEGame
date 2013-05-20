@@ -17,7 +17,7 @@ defaultproperties
   bFainted=false
   bInBattle=false
 
-  GroundSpeed=105
+  GroundSpeed=250
   AccelRate=1024
   
   
@@ -33,7 +33,7 @@ defaultproperties
   Components.Add(NPCMesh0)
 
   Begin Object Name=CollisionCylinder
-      CollisionRadius=+0008.000000
+      CollisionRadius=+0010.000000
       CollisionHeight=+0044.000000
    End Object
    CylinderComponent=CollisionCylinder
