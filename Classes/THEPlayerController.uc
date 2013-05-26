@@ -58,6 +58,7 @@ var bool bCaughtWildPokemon;
 var bool bInBattle;
 var bool bCatchSuccess;
 var bool bPressEscape;
+var bool bDisplayDistanceWarning;
 
 /** 
  * FOLLOWER VARIABLES
@@ -100,6 +101,7 @@ simulated event PostBeginPlay()
 	bInBattle                     = false;
 	bshowPokeballCloud            = false;
 	bPartyPokemonCanEvolve        = false;
+	bDisplayDistanceWarning       = false;
 	currentSelectedBattleAttack=0;
 	
 	TypeArrayInit();
@@ -133,20 +135,21 @@ function PCTimer()
 	local String fainted;
     local array<string> chars;
 	
+	if(bShowPokeballCloud)
+	{
+		pokeballCloudCount++;
+		if (pokeballCloudCount>18)
+		{
+			if (!bPlayBattleAnimations)
+			{
+				StopPokemonParticleComponent();
+			}
+			bShowPokeballCloud=false;
+		}
+	}
+
 	if (!bPressEscape)
 	{
-	    if(bShowPokeballCloud)
-	    {
-	    	pokeballCloudCount++;
-	    	if (pokeballCloudCount>18)
-	    	{
-	    		if (!bPlayBattleAnimations)
-	    		{
-	    			StopPokemonParticleComponent();
-	    		}
-	    		bShowPokeballCloud=false;
-	    	}
-	    }
 	    
 	    if (bSelectCharacter)
 	    {
@@ -180,7 +183,7 @@ function PCTimer()
 	    				if (lastNumeral==1)
 	    				{
 	    					createChar("Red");
-	    					addPokemon("Porygon");
+	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
 	    					char.characterBerries=20;
@@ -189,7 +192,7 @@ function PCTimer()
 	    				if (lastNumeral==2)
 	    				{
 	    					createChar("Blue");
-	    					addPokemon("Porygon");
+	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
 	    					char.characterBerries=20;
@@ -198,7 +201,7 @@ function PCTimer()
 	    				if (lastNumeral==3)
 	    				{
 	    					createChar("Green");
-	    					addPokemon("Porygon");
+	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
 	    					char.characterBerries=20;
@@ -211,6 +214,13 @@ function PCTimer()
         
 	    if (bInBattle)
 	    {
+			if (bDisplayDistanceWarning)
+			{
+				if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 350)
+				{
+					bDisplayDistanceWarning=false;
+				}
+			}
 	        if (bSelectBattlePokemon)
 	        {
 	    		//Recall the friendly before giving the player a chance to send out another
@@ -223,6 +233,7 @@ function PCTimer()
 	    				{
 	    				    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 350)
 	    				    {
+								bDisplayDistanceWarning=false;
 	    				    	//Count number of pokemon in party
 	    				        j=0;
 	                            for (i = 0; i < char.pokemonInventory.Length; ++i)
@@ -291,6 +302,7 @@ function PCTimer()
 	    				    else
 	    				    {
 	    				    	//display a warning as to why you can't select here
+								bDisplayDistanceWarning=true;
 	    				    }
 	    				}
 	    				else
@@ -304,7 +316,7 @@ function PCTimer()
 	    	//Run is manual
 	    	if (EnemyPokemon != None)
 	    	{
-	    	    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 500)
+	    	    if (VSize2D(Pawn.Location - EnemyPokemon.Location) > 525)
 	    	    {
 	    	        //Player has run too far from the match and will exit the battle after the oppenent gets another attack in
 	    	    	//reset menus and temporary pokemon stats
@@ -765,7 +777,7 @@ function PCTimer()
                 if (WildPokemon != None && WildPokemon.bFainted == false)
                 {
                     Distance = VSize2D(Pawn.Location - WildPokemon.Location);
-                    if (Distance < 400)
+                    if (Distance < 425)
 	         	    {
         
 	        			bInBattle = true;
@@ -805,6 +817,10 @@ function PCTimer()
 	    		bPressEscape=false;
 	    	}
 	    	if (lastNumeral==2)
+	    	{
+	    		saveChar();
+	    	}
+	    	if (lastNumeral==3)
 	    	{
 	    		ConsoleCommand("Quit");
 	    	}
@@ -930,6 +946,9 @@ function SpawnFriendlyForBattle()
 			break;
 		case "Pidgey":
 			Friendly = Spawn(class'THEPawn_NPC_Pidgey',,, target, rotator(enemyLocation - target));
+			break;
+		case "Pidgeotto":
+			Friendly = Spawn(class'THEPawn_NPC_Pidgeotto',,, target, rotator(enemyLocation - target));
 			break;
 	}
 
@@ -1141,6 +1160,7 @@ function BattleStateExitCleanup()
 	bInBattle                     = false;
 	bShowPokeballCloud            = false;
 	bPartyPokemonCanEvolve        = false;
+	bDisplayDistanceWarning       = false;
 
 	if (EnemyPokemon != None)
 	{
@@ -3444,13 +3464,13 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	}
 	if (attackName == "QuickAttack")
 	{
-		targetLocation.Z=targetLocation.Z-50;
-		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_QuickAttack', targetLocation, spawnParticleRotation);
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Quickattack', sourceLocation, spawnParticleRotation);
 	}
-	if (attackName == "Swift")
+	if (attackName == "Swift") 
 	{
-		targetLocation.Z=targetLocation.Z-50;
-		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Swift', targetLocation, spawnParticleRotation);
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Swift', sourceLocation, spawnParticleRotation);
 	}
 	if (attackName == "Thunder")
 	{
@@ -3466,6 +3486,21 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	{
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_PsyBeam', sourceLocation, spawnParticleRotation);
+	}
+	if (attackName == "Gust")
+	{
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Gust', sourceLocation, spawnParticleRotation);
+	}
+	if (attackName == "SandAttack")
+	{
+		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_SandAttack', sourceLocation, spawnParticleRotation);
+	}
+	if (attackName == "Whirlwind")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Whirlwind', targetLocation, spawnParticleRotation);
 	}
 
 	return;

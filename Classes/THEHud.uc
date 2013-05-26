@@ -52,6 +52,14 @@ function DrawHUD()
 	    	DrawLowerBoxes(6);
 	    	DrawLowerStringNameList(lowerchars,6);
 	    	DrawTitle("Select Pokemon");
+			if(ThePlayerController.bDisplayDistanceWarning)
+		    {
+		    	DrawTitle("Select Pokemon - You are too close, back up!");
+		    }
+			else
+			{
+			    DrawTitle("Select Pokemon");
+			}
 	    }
 	    else
 	    {
@@ -85,13 +93,13 @@ function DrawHUD()
 	    if(ThePlayerController.bPlayerPokemonVictory)
 	    {
 	    	DrawCenterBox();
-	    	DrawCenterTitle();
+	    	DrawCenterTitle("Battle Results:\n(Press any number to continue)");
 	    	DrawCenterExp();
 	    }
 	    if(ThePlayerController.bPartyPokemonCanLearnNewMove)
 	    {
 	    	DrawSmallCenterBox();
-	    	DrawCenterTitle();
+	    	DrawCenterTitle("Battle Results:\n(Press any number to continue)");
 	    	DrawPokemonWillLearnInfo();
 	    }
 	    if(ThePlayerController.bPartyPokemonReplaceMove)
@@ -101,7 +109,7 @@ function DrawHUD()
 	    	DrawLowerBoxes(5);
 	    	DrawLowerStringNameList(lowerchars,5);
 	    	DrawSmallCenterBox();
-	    	DrawCenterTitle();
+	    	DrawCenterTitle("Battle Results:\n(Press any number to continue)");
 	    	DrawPokemonReplaceInfo();
 	    }
 	    if(ThePlayerController.bSelectBattleOption)
@@ -136,7 +144,7 @@ function DrawHUD()
 	    if(ThePlayerController.bCaughtWildPokemon)
 	    {
 	    	DrawSmallCenterBox();
-	    	DrawCenterTitle();
+	    	DrawCenterTitle("Battle Results:\n(Press any number to continue)");
 	    	DrawPokemonCaughtInfo();
 	    }
 	    if(ThePlayerController.bPartyPokemonCanEvolve)
@@ -149,15 +157,21 @@ function DrawHUD()
 	    	DrawLowerBoxes(2);
 	    	DrawLowerStringNameList(lowerchars,2);
 	    }
+		//if(ThePlayerController.bDisplayDistanceWarning)
+		//{
+		//	DrawSmallerCenterBox();
+		//	DrawCenterTitle("You are too close, back up!");
+		//}
 	}
 	else
 	{
 		lowerchars.Length=0;
 		lowerchars.addItem("Keep playing");
+		lowerchars.addItem("Save Game");
 	    lowerchars.addItem("Quit");
 		DrawWideScreen();
-	    DrawLowerBoxes(2);
-	    DrawLowerStringNameList(lowerchars,2);
+	    DrawLowerBoxes(3);
+	    DrawLowerStringNameList(lowerchars,3);
 	    DrawTitle("Pokemon Unreal");
 	}
 }
@@ -200,12 +214,19 @@ function DrawSmallCenterBox()
 	Canvas.DrawRect(SizeX/2,3*SizeY/(7*5));
 }
 
-function DrawCenterTitle()
+function DrawSmallerCenterBox()
+{
+	Canvas.SetPos(SizeX/4,SizeY/5);
+	Canvas.SetDrawColor(0,0,0,150);
+	Canvas.DrawRect(SizeX/2,3*SizeY/(7*5));
+}
+
+function DrawCenterTitle(String titleString)
 {
 	Canvas.SetPos(SizeX/4+5,SizeY/5+5);
 	Canvas.SetDrawColor(255,255,255,200);
 	Canvas.Font = class'Engine'.static.GetLargeFont();
-	Canvas.DrawText("Battle Results:\n(Press any number to continue)");
+	Canvas.DrawText(titleString);
 }
 
 function DrawCenterExp()

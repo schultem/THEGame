@@ -37,6 +37,14 @@ function AITimer()
 	 	        //Follow
                  if (Distance > 40)
 	 	        {
+					if (Distance > 150)
+					{
+						THEPawn_NPC_Pikachu(Pawn).GroundSpeed=310;
+					}
+					else
+					{
+						THEPawn_NPC_Pikachu(Pawn).GroundSpeed=150;
+					}
 	 	            target = P.Location;
                     target.Z = P.Location.Z;
                     GoToState('MoveAbout');

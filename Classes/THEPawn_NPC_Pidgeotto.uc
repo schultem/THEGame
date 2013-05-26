@@ -1,4 +1,4 @@
-class THEPawn_NPC_Pidgey extends THEPawn_NPC_Friendly
+class THEPawn_NPC_Pidgeotto extends THEPawn_NPC_Friendly
    placeable;
    
 simulated event PostBeginPlay()
@@ -12,7 +12,7 @@ defaultproperties
   ControllerClass=class'THEBot_Friendly'
 
   //Used to generate stats for this object
-  speciesName="Pidgey"
+  speciesName="Pidgeotto"
 
   GroundSpeed=300
   AccelRate=2048
@@ -21,9 +21,9 @@ defaultproperties
   Begin Object Name=SkeletalMeshComponent0
     Translation=(Z=-43.00)
     LightEnvironment=MyLightEnvironment
-    SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Pidgey'
-    AnimSets(0)=AnimSet'THEGamePackage.AS_Pidgey'
-    AnimtreeTemplate=AnimTree'THEGamePackage.AnimTrees_Pokemon.AT_Pidgey'
+    SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Pidgeotto'
+    AnimSets(0)=AnimSet'THEGamePackage.AS_Pidgeotto'
+    AnimtreeTemplate=AnimTree'THEGamePackage.AnimTrees_Pokemon.AT_Pidgeotto'
   End Object
   Mesh=SkeletalMeshComponent0
   Components.Add(SkeletalMeshComponent0)

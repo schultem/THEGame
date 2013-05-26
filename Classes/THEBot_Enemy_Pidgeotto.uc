@@ -1,4 +1,4 @@
-class THEBot_Enemy_Rattata extends AIController;
+class THEBot_Enemy_Pidgeotto extends AIController;
 
 var Vector MyTarget;
 var THEPawn P;
@@ -88,7 +88,7 @@ function WaitToReachDestination()
 		AIticks=0;
 		GoToState('MoveAbout');
 	}
-	if (AIticks>Rand(3000))
+	if (AIticks>Rand(1500))
 	{
 	    AIticks=0;
 	    ChooseNewDestination();
@@ -125,5 +125,5 @@ Begin:
 
 defaultproperties
 {
-    Territory=2000;
+    Territory=1000;
 }

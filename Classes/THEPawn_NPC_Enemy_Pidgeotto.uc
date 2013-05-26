@@ -1,5 +1,5 @@
 //Follows the main character
-class THEPawn_NPC_Enemy_Pidgey extends THEPawn_NPC_Enemy
+class THEPawn_NPC_Enemy_Pidgeotto extends THEPawn_NPC_Enemy
   placeable;
 
 simulated event PostBeginPlay()
@@ -10,9 +10,9 @@ simulated event PostBeginPlay()
 
 defaultproperties 
 {
-  ControllerClass=class'THEBot_Enemy_Pidgey'
+  ControllerClass=class'THEBot_Enemy_Pidgeotto'
   //Used to generate stats for this object
-  speciesName="Pidgey"
+  speciesName="Pidgeotto"
   bFainted=false
   bInBattle=false
 
@@ -24,9 +24,9 @@ defaultproperties
   Begin Object Name=NPCMesh0
     Translation=(Z=-43.00)
     LightEnvironment=MyLightEnvironment
-    SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Pidgey'
-    AnimSets(0)=AnimSet'THEGamePackage.AS_Pidgey'
-    AnimtreeTemplate=AnimTree'THEGamePackage.AnimTrees_Pokemon.AT_Pidgey'
+    SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Pidgeotto'
+    AnimSets(0)=AnimSet'THEGamePackage.AS_Pidgeotto'
+    AnimtreeTemplate=AnimTree'THEGamePackage.AnimTrees_Pokemon.AT_Pidgeotto'
   End Object
   Mesh=NPCMesh0
   Components.Add(NPCMesh0)
