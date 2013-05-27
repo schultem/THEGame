@@ -950,6 +950,9 @@ function SpawnFriendlyForBattle()
 		case "Pidgeotto":
 			Friendly = Spawn(class'THEPawn_NPC_Pidgeotto',,, target, rotator(enemyLocation - target));
 			break;
+		case "Pidgeot":
+			Friendly = Spawn(class'THEPawn_NPC_Pidgeot',,, target, rotator(enemyLocation - target));
+			break;
 	}
 
 	Friendly.targetRotation = rotator(enemyLocation - target);
@@ -3501,6 +3504,11 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	{
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Whirlwind', targetLocation, spawnParticleRotation);
+	}
+	if (attackName == "WingAttack")
+	{
+		targetLocation.Z=targetLocation.Z-50;
+		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_WingAttack', targetLocation, spawnParticleRotation);
 	}
 
 	return;
