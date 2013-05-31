@@ -36,6 +36,13 @@ function DrawHUD()
 	
 	if(!ThePlayerController.bPressEscape)
 	{
+		//Draw status for items, etc
+	    if (playerStatusTimer > 0)
+	    {
+	        playerStatusTimer--;
+	    	DrawPlayerStatus(playerStatus);
+	    }
+		
 	    if(ThePlayerController.bSelectCharacter)
 	    {
 	        lowerchars = ThePlayerController.returnChars();
@@ -64,7 +71,7 @@ function DrawHUD()
 	    else
 	    {
 	        if(ThePlayerController.bInBattle) //and not selecting a different pokemon
-	        {
+	        { 
 	    		//don't display or update any hud if animations are playing
 	    		if (!ThePlayerController.bPlayBattleAnimations)
 	    		{
@@ -537,8 +544,9 @@ Function DrawPlayerStatus(String status)
     Canvas.DrawText(status);
 
 }
-
+ 
 defaultproperties
 {
     statusDisplayTime=200
+	playerStatusTimer=0
 }

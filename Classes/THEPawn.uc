@@ -92,7 +92,7 @@ defaultproperties
    JumpZ=0.0
    CrouchHeight=29.0
    CrouchRadius=21.0
-   WalkableFloorZ=0.0
+   WalkableFloorZ=0.9
    
    Components.Remove(Sprite)
 
@@ -139,7 +139,7 @@ defaultproperties
    Components.Add(WPawnSkeletalMeshComponent)
 
    Begin Object Name=CollisionCylinder
-      CollisionRadius=+0017.000000
+      CollisionRadius=+0010.000000
       CollisionHeight=+0044.000000
    End Object
    CylinderComponent=CollisionCylinder

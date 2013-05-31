@@ -25,7 +25,9 @@ Struct pokemonMove
 var array<pokemonMove> pokemonThatCanLearnNewMove;    //A list to keep track of each pokemon that recently leveled and can learn a new move
 var array<int> pokemonThatCanEvolve;                  //use inventory number
 
-var THEPawn_NPC_Enemy WildPokemon;
+var THEPawn_NPC_Item Item;
+
+var THEPawn_NPC_Enemy Enemy_Instance;
 var THEPawn_NPC_Enemy EnemyPokemon;
 var THEPokemonInventory EnemyPokemonDBInstance;
 var int currentEnemySelectedBattleAttack;
@@ -36,6 +38,8 @@ var int currentSelectedBattleAttack;
 
 var bool bshowPokeballCloud;
 var int pokeballCloudCount;
+
+var int followerTimer;
 
 /** 
  * STATE VARIABLES
@@ -114,7 +118,8 @@ simulated event PostBeginPlay()
 	
 	//Data Input Output Controller
 	gamestate = THEGame(WorldInfo.Game).gamestate;
-	
+	`log("Worldinfo:");
+	`log(WorldInfo.bForceNoPrecomputedLighting);
 	SetTimer(0.1, true, 'PCTimer');
 }
 
@@ -186,7 +191,7 @@ function PCTimer()
 	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
-	    					char.characterBerries=20;
+	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==2)
@@ -195,7 +200,7 @@ function PCTimer()
 	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
-	    					char.characterBerries=20;
+	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==3)
@@ -204,7 +209,7 @@ function PCTimer()
 	    					addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
 	    					char.characterPokeballs=20;
-	    					char.characterBerries=20;
+	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    			}
@@ -772,17 +777,64 @@ function PCTimer()
 	    }
 	    else
  	    {
-            foreach WorldInfo.AllPawns(class'THEPawn_NPC_Enemy', WildPokemon)
+			//Reset the follower if it gets stuck
+			if(VSize2D(Pawn.Location - Follower.Location) > 400  && !bSelectCharacter &&  followerTimer<0)
+	        {
+				catchLocation = Follower.location;
+				catchLocation.z=catchLocation.z+1;
+	        	Follower.destroy();
+	        	Follower = Spawn(FollowerPawnClass,,, catchLocation, Pawn.Rotation);
+				followerTimer=500;
+	        }
+			else
+			{
+				if (followerTimer>-1)
+				{
+					followerTimer--;
+				}
+			}
+
+            foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item', Item)
             {
-                if (WildPokemon != None && WildPokemon.bFainted == false)
+                if (Item != None)
                 {
-                    Distance = VSize2D(Pawn.Location - WildPokemon.Location);
+					Distance = VSize2D(Pawn.Location - Item.Location);
+					if (Distance < 50)
+					{
+						//Add item type to inventory
+						switch(Item.itemName)
+	                    {
+	                    case("Berry"):
+	                    	if (char.characterBerries<10)
+	                    	{
+								char.characterBerries++;
+								THEHud(myHUD).SetPlayerStatus("You found a berry! ("$char.characterBerries$")");
+								Item.Destroy();
+							}
+							else
+							{
+								if (THEHud(myHUD).playerStatusTimer==0)
+								{
+									THEHud(myHUD).SetPlayerStatus("You can't carry any more");
+								}
+							}
+
+	                    	break;
+						}
+					}
+				}
+			}
+            foreach WorldInfo.AllPawns(class'THEPawn_NPC_Enemy', Enemy_Instance)
+            {
+                if (Enemy_Instance != None && Enemy_Instance.bFainted == false)
+                {
+                    Distance = VSize2D(Pawn.Location - Enemy_Instance.Location);
                     if (Distance < 425)
 	         	    {
         
 	        			bInBattle = true;
 	    				bSelectBattlePokemon=true;
-	    				EnemyPokemon=WildPokemon;
+	    				EnemyPokemon=Enemy_Instance;
 	    				EnemyPokemon.bInBattle=true;
 	    				//Create enemy instance, need a random level based on character level..
 	    				temp=GetCharacterMaxLevelPokemon();
@@ -810,6 +862,11 @@ function PCTimer()
 	}
 	else
 	{
+	    bSelectBattleOption=true;
+	    bSelectBattleAttack=false;
+	    bSelectBattlePokemon=false;
+	    bSelectBattleItems=false;
+
 	    if (bNumeralPressed)
 	    {
 	    	if (lastNumeral==1)
@@ -827,7 +884,7 @@ function PCTimer()
 	    	ResetNumeralPress();
 	    }
 	}
-	
+
 	ResetNumeralPress();
     return;
 }
@@ -1087,6 +1144,7 @@ function UpdateCatchLocationEmitter()
 	local float tx,ty;
 	local Vector targetLocation;
 	local Rotator targetRotation;
+	local vector HitLocation, HitNormal, StartTrace, EndTrace;
 
 	targetLocation = Pawn.Location;
 	targetLocation.Z -= 48;
@@ -1099,10 +1157,18 @@ function UpdateCatchLocationEmitter()
 	targetLocation.X += tx;
 	targetLocation.Y += ty;
 	
+	StartTrace = targetLocation;
+	StartTrace.Z = targetLocation.Z + 1000;
+    EndTrace = targetLocation;
+    EndTrace.Z = targetLocation.Z - 1000;
+    Pawn.Trace(HitLocation, HitNormal, EndTrace, StartTrace, true, vect(0,0,0),, TRACEFLAG_Bullet);   
+
 	catchLocation=targetLocation;
+	catchLocation.z=HitLocation.z;
 	StopPokemonParticleComponent();
-	spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Catchemitter', targetLocation, targetRotation);
-    return;
+	spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Catchemitter', catchLocation, targetRotation);
+    
+	return;
 }
 
 function RegainPlayerControl()

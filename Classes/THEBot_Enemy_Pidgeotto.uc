@@ -82,13 +82,13 @@ function WaitToReachDestination()
 {
 	if(VSize2D(Pawn.Location-initialLocation)>Territory)
 	{
-		`log(VSize2D(Pawn.Location-initialLocation));
+		//`log(VSize2D(Pawn.Location-initialLocation));
 	    MyTarget=initialLocation;
 		THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
 		AIticks=0;
 		GoToState('MoveAbout');
 	}
-	if (AIticks>Rand(1500))
+	if (AIticks>Rand(2000)||VSize2D(Pawn.Location-MyTarget)<50)
 	{
 	    AIticks=0;
 	    ChooseNewDestination();
@@ -125,5 +125,5 @@ Begin:
 
 defaultproperties
 {
-    Territory=1000;
+    Territory=7000;
 }

@@ -6,7 +6,7 @@ simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
 	SpawnDefaultController();
-	SetDrawScale(1.5); //I screwed up and made the skeletal mesh the wrong size.
+	SetDrawScale(2.5); //I screwed up and made the skeletal mesh the wrong size.
 }
 
 defaultproperties 
@@ -23,7 +23,7 @@ defaultproperties
   
   //Setup default NPC mesh
   Begin Object Name=NPCMesh0
-    Translation=(Z=-31.00)
+    Translation=(Z=-20.00)
     LightEnvironment=MyLightEnvironment
     SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Rattata'
     AnimSets(0)=AnimSet'THEGamePackage.AS_Rattata'

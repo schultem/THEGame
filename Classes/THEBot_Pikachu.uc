@@ -22,7 +22,7 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 function AITimer()
 {
     local float Distance;
-   
+
     foreach WorldInfo.AllPawns(class'THEPawn', P)
     {
         if (P != None)
@@ -48,6 +48,7 @@ function AITimer()
 	 	            target = P.Location;
                     target.Z = P.Location.Z;
                     GoToState('MoveAbout');
+
 	 	        }
 	 	        else
 	 	        {

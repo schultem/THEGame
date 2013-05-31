@@ -82,7 +82,7 @@ function WaitToReachDestination()
 {
 	if(VSize2D(Pawn.Location-initialLocation)>Territory)
 	{
-		`log(VSize2D(Pawn.Location-initialLocation));
+		//`log(VSize2D(Pawn.Location-initialLocation));
 	    MyTarget=initialLocation;
 		THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
 		AIticks=0;
@@ -125,5 +125,5 @@ Begin:
 
 defaultproperties
 {
-    Territory=2000;
+    Territory=1000;
 }

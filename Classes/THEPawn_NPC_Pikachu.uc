@@ -4,6 +4,7 @@ class THEPawn_NPC_Pikachu extends Pawn
   
 var DynamicLightEnvironmentComponent LightEnvironment;
 var bool bInBattle;
+var bool bReset;
 var Rotator targetRotation;
 
 var AnimNodeSlot TestSlot;
@@ -13,6 +14,7 @@ simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
 	SpawnDefaultController();
+	SetDrawScale(1.2);
 }
 
 function Tick(float Delta)
@@ -53,6 +55,7 @@ function SetControllerBattleStatus(bool bStatus)
 	THEBot_Pikachu(Controller).bInBattle=bStatus;
 }
 
+
 //function SetControllerRotation(Rotator rotator)
 //{
 //	THEBot_Pikachu(Controller).targetRotation=rotator;
@@ -61,7 +64,8 @@ function SetControllerBattleStatus(bool bStatus)
 defaultproperties 
 {
   ControllerClass=class'THEBot_Pikachu'
-
+  
+  WalkableFloorZ=0.0
   GroundSpeed=150
   AccelRate=512.0
 
@@ -75,7 +79,7 @@ defaultproperties
 
   //Setup default NPC mesh
   Begin Object class=SkeletalMeshComponent Name=SkeletalMeshComponent0
-    Translation=(Z=-48.00)
+    Translation=(Z=-40.00)
     LightEnvironment=MyLightEnvironment
     SkeletalMesh=SkeletalMesh'THEGamePackage.SkeletalMesh_Pokemon.SM_Pikachu'
     AnimSets.add(AnimSet'THEGamePackage.AS_Pikachu')

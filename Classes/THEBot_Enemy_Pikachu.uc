@@ -1,22 +1,24 @@
-//If the main character has a pikachu on the team, let it visibly follow!
 class THEBot_Enemy_Pikachu extends AIController;
 
 var Vector MyTarget;
 var THEPawn P;
 var float AIticks;
 var float Distance;
+var Vector initialLocation;
+var int Territory;
 
 simulated event PostBeginPlay()
 {
-super.PostBeginPlay();
-
-SetTimer(0.1, true, 'AITimer');
+    super.PostBeginPlay();
+    
+    SetTimer(0.1, true, 'AITimer');
 }
 
 event Possess(Pawn inPawn, bool bVehicleTransition)
 {
     super.Possess(inPawn, bVehicleTransition);
     Pawn.SetMovementPhysics();
+	initialLocation=Pawn.Location;
 }
 
 function AITimer()
@@ -26,7 +28,7 @@ function AITimer()
 	{
 		if (!THEPawn_NPC_Enemy(Pawn).bFainted)
 		{
-	        if (GetStateName()=='MoveAbout')
+	        if (GetStateName()=='MoveAbout' || GetStateName()=='MoveAboutStopRotation')
 	        {
 	            WaitToReachDestination();
 	        }
@@ -40,12 +42,12 @@ function AITimer()
 			if(GetStateName()!='Fainted')
 			{
 				AIticks=0;
-				`log("gotostatefainted");
+				//`log("gotostatefainted");
 				GoToState('Fainted');
 			}
-			if (AIticks>=100) //wait 10 seconds after fainting to recover
+			if (AIticks>=1000) //time to wait to recover
 			{
-				`log("aiticks>=10");
+				//`log("aiticks>=10");
 				THEPawn_NPC_Enemy(Pawn).bFainted=false;
 			    ChooseNewDestination();
 			}
@@ -53,7 +55,7 @@ function AITimer()
 	}
 	else
 	{
-		//Stop and otate to face the pokemon the player has chosen
+		//Stop and rotate to face the pokemon the player has chosen
 		MyTarget=Pawn.Location;
 	    GoToState('BattlePosition');
 	}
@@ -64,22 +66,29 @@ function ChooseNewDestination()
     local int OffsetX;
     local int OffsetY;
     //`log('ChooseNewDestination');
-    OffsetX = Rand(500)-Rand(500);
-    OffsetY = Rand(500)-Rand(500);
+    OffsetX = Rand(Territory)-Rand(Territory);
+    OffsetY = Rand(Territory)-Rand(Territory);
 
     MyTarget.X = Pawn.Location.X + OffsetX;
     MyTarget.Y = Pawn.Location.Y + OffsetY;
     MyTarget.Z = Pawn.Location.Z;
 	
-    THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
-	
+	THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
+
     GoToState('MoveAbout');
 }
 
 function WaitToReachDestination()
-{   
-    //`log('WaitToReachDestination');
-	if (AIticks>100)
+{
+	if(VSize2D(Pawn.Location-initialLocation)>Territory)
+	{
+		//`log(VSize2D(Pawn.Location-initialLocation));
+	    MyTarget=initialLocation;
+		THEPawn_NPC_Enemy(Pawn).targetRotation=Rotator(MyTarget-Pawn.Location);
+		AIticks=0;
+		GoToState('MoveAbout');
+	}
+	if (AIticks>Rand(1500))
 	{
 	    AIticks=0;
 	    ChooseNewDestination();
@@ -116,4 +125,5 @@ Begin:
 
 defaultproperties
 {
+    Territory=2000;
 }

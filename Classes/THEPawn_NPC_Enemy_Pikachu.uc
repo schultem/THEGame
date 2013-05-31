@@ -16,7 +16,7 @@ defaultproperties
   bFainted=false
   bInBattle=false
 
-  GroundSpeed=100
+  GroundSpeed=310
   AccelRate=1024
   
   //Setup default NPC mesh
