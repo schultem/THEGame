@@ -30,6 +30,8 @@ var THEPawn_NPC_Item Item;
 var THEPawn_NPC_Enemy Enemy_Instance;
 var THEPawn_NPC_Enemy EnemyPokemon;
 var THEPokemonInventory EnemyPokemonDBInstance;
+var THEPawn_NPC_Item_Bed Bed_Instance;
+var THEPawn_NPC_Item_Computer Computer_Instance;
 var int currentEnemySelectedBattleAttack;
 var float wildLevelMultiplier;
 
@@ -62,6 +64,7 @@ var bool bCaughtWildPokemon;
 var bool bInBattle;
 var bool bCatchSuccess;
 var bool bPressEscape;
+var bool bGameOver;
 var bool bDisplayDistanceWarning;
 
 /** 
@@ -87,8 +90,16 @@ simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
 
+    ConsoleCommand("SETRES 1280x720x32 f");
+    
+    // Update settings in the ini
+    ConsoleCommand("SCALE SET ResX 1280");
+    ConsoleCommand("SCALE SET ResY 720");
+    ConsoleCommand("SCALE TOGGLE Fullscreen");
+
 	//Initial "State"/GameControl Variables, maybe move these to default eventually
 	bSelectCharacter              = true;
+	bGameOver                     = false;
 	bSelectBattlePokemon          = false;
 	bSelectBattleOption           = false;
 	bSelectBattleAttack           = false;
@@ -153,9 +164,29 @@ function PCTimer()
 		}
 	}
 
+	//if all of the character's party pokemon are fainted, game over
+	if (!bSelectCharacter)
+	{
+	    j=0;
+	    for (i = 0; i < char.pokemonInventory.Length; ++i)
+	    {
+	        if (char.pokemonInventory[i].inPlayerParty)
+	        {
+	    		if(!char.pokemonInventory[i].isFainted)
+	    		{
+	    			j=1;
+	    		}
+	        }
+	    }
+	    if (j==0)
+	    {
+	    	bGameOver=true;
+	    	bPressEscape=true;
+	    }
+	}
+
 	if (!bPressEscape)
 	{
-	    
 	    if (bSelectCharacter)
 	    {
 	        GoToState('SelectCharacter');
@@ -168,7 +199,7 @@ function PCTimer()
 	    			{
 	    	            char = gamestate.loadCharacter(chars[lastNumeral-1]);
 	    	    	    bSelectCharacter=false;
-	    			    
+
 	    			    for (i = 0; i < char.pokemonInventory.Length; ++i)
 	    			    {
 	    			        if (char.pokemonInventory[i].pokemonSpecies == "Pikachu")
@@ -794,6 +825,47 @@ function PCTimer()
 				}
 			}
 
+	        foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item_Bed',Bed_Instance)
+            {
+				Distance = VSize2D(Pawn.Location - Bed_Instance.Location);
+	        	if (Distance < 75)
+	        	{
+					HealAllPokemon();
+					if (THEHud(myHUD).playerStatusTimer<1)
+					{
+						THEHud(myHUD).SetPlayerStatus("All of your Pokemon have recovered.");
+					}
+	        	}
+	        }
+	        foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item_Computer',Computer_Instance)
+            {
+				Distance = VSize2D(Pawn.Location - Computer_Instance.Location);
+	        	if (Distance < 75)
+				{
+					//play computer on animation
+					if (bNumeralPressed && lastNumeral == 1)
+	                {
+						if (char.characterBerries>0)
+						{
+						    char.characterBerries--;
+						    char.characterPokeballs++;
+							if (THEHud(myHUD).playerStatusTimer<1)
+							{
+								THEHud(myHUD).SetPlayerStatus("Traded a berry for a pokeball");
+							}
+						}
+						else
+						{
+							if (THEHud(myHUD).playerStatusTimer<1)
+							{
+								THEHud(myHUD).SetPlayerStatus("You don't have any more berries");
+							}
+						}
+					}
+				ResetNumeralPress();
+	        	}
+	        }
+
             foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item', Item)
             {
                 if (Item != None)
@@ -862,27 +934,39 @@ function PCTimer()
 	}
 	else
 	{
-	    bSelectBattleOption=true;
-	    bSelectBattleAttack=false;
-	    bSelectBattlePokemon=false;
-	    bSelectBattleItems=false;
-
-	    if (bNumeralPressed)
-	    {
-	    	if (lastNumeral==1)
-	    	{
-	    		bPressEscape=false;
-	    	}
-	    	if (lastNumeral==2)
-	    	{
-	    		saveChar();
-	    	}
-	    	if (lastNumeral==3)
-	    	{
-	    		ConsoleCommand("Quit");
-	    	}
-	    	ResetNumeralPress();
-	    }
+		if (!bGameOver)
+		{
+	        if (bNumeralPressed)
+	        {
+	        	if (lastNumeral==1)
+	        	{
+	        		bPressEscape=false;
+		    		if (bSelectBattleAttack || bSelectBattlePokemon || bSelectBattleItems)
+		    		{
+		    			bSelectBattleOption=true;
+	                    bSelectBattleAttack=false;
+	                    bSelectBattlePokemon=false;
+	                    bSelectBattleItems=false;
+		    		}
+	        	}
+	        	if (lastNumeral==2)
+	        	{
+	        		saveChar();
+	        	}
+	        	if (lastNumeral==3)
+	        	{
+	        		ConsoleCommand("Quit");
+	        	}
+	        	ResetNumeralPress();
+	        }
+		}
+		else
+		{
+			if (bNumeralPressed)
+	        {
+				ConsoleCommand("Quit");
+			}
+		}
 	}
 
 	ResetNumeralPress();
@@ -1177,6 +1261,16 @@ function RegainPlayerControl()
 	GoToState('PlayerWaiting');
 	StartFire();
     return;
+}
+
+function HealAllPokemon()
+{
+	local int i;
+	for (i = 0; i < char.pokemonInventory.Length; ++i)
+	{
+	    char.pokemonInventory[i].isFainted = false;
+		char.pokemonInventory[i].currentHitPoints = char.pokemonInventory[i].maxHitPoints;
+	}
 }
 
 function array<float> GetCurrentSelectedPokemonHP()

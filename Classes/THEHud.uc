@@ -9,6 +9,7 @@ var String playerStatus;
 var int enemyStatusTimer;
 var int playerStatusTimer;
 var int statusDisplayTime;
+var CanvasIcon titleIcon;
 
 /******************************************************************
  * 
@@ -46,12 +47,14 @@ function DrawHUD()
 	    if(ThePlayerController.bSelectCharacter)
 	    {
 	        lowerchars = ThePlayerController.returnChars();
-	        DrawWideScreen();
-	    	DrawLowerBoxes(3);
+			Canvas.DrawIcon(titleIcon, 0-(sizeX%1920)*1/4, 0-(sizeY%1080)*1/4);
+			//DrawBlackScreen();
+	    	DrawLowerBoxesWhite(3);
 	    	DrawLowerStringNameList(lowerchars,3);
-	    	DrawTitle("Select Character");
+	    	//DrawTitle("Select Character");
 	    	
 	    }
+
 	    if(ThePlayerController.bSelectBattlePokemon)
 	    {
 	        lowerchars = ThePlayerController.returnPokemonChars();
@@ -164,22 +167,36 @@ function DrawHUD()
 	    	DrawLowerBoxes(2);
 	    	DrawLowerStringNameList(lowerchars,2);
 	    }
-		//if(ThePlayerController.bDisplayDistanceWarning)
-		//{
-		//	DrawSmallerCenterBox();
-		//	DrawCenterTitle("You are too close, back up!");
-		//}
 	}
 	else
 	{
-		lowerchars.Length=0;
-		lowerchars.addItem("Keep playing");
-		lowerchars.addItem("Save Game");
-	    lowerchars.addItem("Quit");
-		DrawWideScreen();
-	    DrawLowerBoxes(3);
-	    DrawLowerStringNameList(lowerchars,3);
-	    DrawTitle("Pokemon Unreal");
+		if (!ThePlayerController.bGameOver)
+		{
+		    lowerchars.Length=0;
+		    lowerchars.addItem("Keep playing");
+		    lowerchars.addItem("Save Game");
+	        lowerchars.addItem("Quit");
+		    if(ThePlayerController.bSelectCharacter)
+		    {
+		    	Canvas.DrawIcon(titleIcon, 0-(sizeX%1920)*1/4, 0-(sizeY%1080)*1/4);
+		    	DrawLowerBoxesWhite(3);
+		    }
+		    else
+		    {
+		    	DrawWideScreen();
+		    	DrawLowerBoxes(3);
+		    	DrawTitle("Pokemon Unreal");
+		    }
+	        DrawLowerStringNameList(lowerchars,3);
+		}
+		else
+		{
+			if(ThePlayerController.bGameOver)
+	        {
+		    	DrawBlackScreen();
+	        	DrawTitle("All of your party has fainted - Press any number to quit");
+	        }
+		}
 	}
 }
  
@@ -418,6 +435,13 @@ function DrawWideScreen()
 
 }
 
+function DrawBlackScreen()
+{
+	Canvas.SetPos(0,0);
+	Canvas.SetDrawColor(0,0,0,255);
+	Canvas.DrawRect(SizeX,SizeY);
+}
+
 Function DrawLowerBoxes(int numberOfBoxes)
 {
     
@@ -428,6 +452,21 @@ Function DrawLowerBoxes(int numberOfBoxes)
 	    {
 	        Canvas.SetPos(i*sizeX/numberOfBoxes,6*sizeY/7);
 	        Canvas.SetDrawColor(0,0,0,5);
+	        Canvas.DrawRect(j,SizeY/8);
+		}
+	}
+}
+
+Function DrawLowerBoxesWhite(int numberOfBoxes)
+{
+    
+    local int i,j;
+    for(i=0;i<numberOfBoxes;i++)
+	{
+	    for(j=0; j<SizeX/numberOfBoxes; j=j+5)
+	    {
+	        Canvas.SetPos(i*sizeX/numberOfBoxes,6*sizeY/7);
+	        Canvas.SetDrawColor(255,255,255,1);
 	        Canvas.DrawRect(j,SizeY/8);
 		}
 	}
@@ -549,4 +588,5 @@ defaultproperties
 {
     statusDisplayTime=200
 	playerStatusTimer=0
+	titleIcon=(Texture=Texture2D'THEGamePackage.Textures.tmap_titlescreen') 
 }

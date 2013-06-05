@@ -11,7 +11,7 @@ simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
 	SpawnDefaultController();
-	SetTimer(10, true, 'AITimer');
+	SetTimer(500, true, 'AITimer');
 }
  
 function AITimer()
@@ -21,9 +21,9 @@ function AITimer()
 	spawnLocation.Y=location.Y + Rand(200) - Rand(200);
 	spawnLocation.Z=location.Z;
 	
-	spawnRotation.Pitch=Rotation.Pitch + Rand(65536) - Rand(65536);
-	spawnRotation.Yaw=Rotation.Yaw + Rand(65536) - Rand(65536);
-	spawnRotation.Roll=Rotation.Roll + Rand(65536) - Rand(65536);
+	spawnRotation.Pitch = Rand(65536) - Rand(65536);
+	spawnRotation.Roll  = Rand(65536) - Rand(65536);
+	spawnRotation.Yaw   = Rand(65536) - Rand(65536);
 
 	if (notEnoughBerries())
 	{

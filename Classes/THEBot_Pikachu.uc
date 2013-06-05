@@ -39,7 +39,7 @@ function AITimer()
 	 	        {
 					if (Distance > 150)
 					{
-						THEPawn_NPC_Pikachu(Pawn).GroundSpeed=310;
+						THEPawn_NPC_Pikachu(Pawn).GroundSpeed=305;
 					}
 					else
 					{
