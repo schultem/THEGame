@@ -94,7 +94,7 @@ defaultproperties
    CrouchRadius=21.0
    WalkableFloorZ=0.9
    
-   Components.Remove(Sprite)
+   //Components.Remove(Sprite)
 
    Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
       bSynthesizeSHLight=TRUE
@@ -104,39 +104,17 @@ defaultproperties
    Components.Add(MyLightEnvironment)
    LightEnvironment=MyLightEnvironment
 
-   Begin Object Class=SkeletalMeshComponent Name=WPawnSkeletalMeshComponent
-       //Your Mesh Properties
-      SkeletalMesh=SkeletalMesh'THEGamePackage.SM_Red2'
-      AnimTreeTemplate=AnimTree'THEGamePackage.AT_Red2'
-      AnimSets(0)=AnimSet'THEGamePackage.AS_Red2'
-      Translation=(Z=-48.0)
-      Scale=1.0
-      //General Mesh Properties
-      bCacheAnimSequenceNodes=FALSE
-      AlwaysLoadOnClient=true
-      AlwaysLoadOnServer=true
-      bOwnerNoSee=false
-      CastShadow=true
-      BlockRigidBody=TRUE
-      bUpdateSkelWhenNotRendered=false
-      bIgnoreControllersWhenNotRendered=TRUE
-      bUpdateKinematicBonesFromAnimation=true
-      bCastDynamicShadow=true
-      RBChannel=RBCC_Untitled3
-      RBCollideWithChannels=(Untitled3=true)
-      LightEnvironment=MyLightEnvironment
-      bOverrideAttachmentOwnerVisibility=true
-      bAcceptsDynamicDecals=FALSE
-      bHasPhysicsAssetInstance=true
-      TickGroup=TG_PreAsyncWork
-      MinDistFactorForKinematicUpdate=0.2
-      bChartDistanceFactor=true
-      RBDominanceGroup=20
-      bUseOnePassLightingOnTranslucency=TRUE
-      bPerBoneMotionBlur=true
-   End Object
-   Mesh=WPawnSkeletalMeshComponent
-   Components.Add(WPawnSkeletalMeshComponent)
+  //Setup default NPC mesh
+  Begin Object class=SkeletalMeshComponent Name=SkeletalMeshComponent0
+    Translation=(Z=-48.00)
+    LightEnvironment=MyLightEnvironment
+    SkeletalMesh=SkeletalMesh'THEGamePackage.SM_Red2'
+    AnimTreeTemplate=AnimTree'THEGamePackage.AT_Red2'
+    AnimSets(0)=AnimSet'THEGamePackage.AS_Red2'
+  End Object
+  
+  Mesh=SkeletalMeshComponent0
+  Components.Add(SkeletalMeshComponent0)
 
    Begin Object Name=CollisionCylinder
       CollisionRadius=+0010.000000

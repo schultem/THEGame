@@ -19,7 +19,7 @@ defaultproperties
 
   GroundSpeed=300
   AccelRate=2048
-  
+  WalkableFloorZ=0.0
   
   //Setup default NPC mesh
   Begin Object Name=NPCMesh0

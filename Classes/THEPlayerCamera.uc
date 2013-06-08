@@ -2,14 +2,12 @@ class THEPlayerCamera extends Camera;
 
 var Vector CamOffset;
 var float CameraZOffset;
-var float CamScrollOffset;
-var float MaxFreeCamDistance;
-var float MinFreeCamDistance;
 var float CameraScale, CurrentCameraScale; /** multiplier to default camera distance */
 var float CameraScaleMin, CameraScaleMax;
 
 function UpdateViewTarget(out TViewTarget OutVT, float DeltaTime)
 {
+   local vector      HitLocation, HitNormal;
    local CameraActor   CamActor;
    local Pawn          TPawn;
    
@@ -74,12 +72,11 @@ function UpdateViewTarget(out TViewTarget OutVT, float DeltaTime)
          {
             CamDirX *= square(cos(OutVT.POV.Rotation.Pitch * 0.0000958738)); // 0.0000958738 = 2*PI/65536
          }
-		 if (CamDirX.Z > 0)
-         {
-            CamDirX.Z = 0;
-         }
-
          OutVT.POV.Location = CamStart - CamDirX*CurrentCamOffset.X + CurrentCamOffset.Y*CamDirY + CurrentCamOffset.Z*CamDirZ;
+         if (Trace(HitLocation, HitNormal, OutVT.POV.Location, CamStart, false, vect(12,12,12)) != None)
+         {
+            OutVT.POV.Location = HitLocation;
+         }
       }
    }
 
@@ -89,7 +86,7 @@ function UpdateViewTarget(out TViewTarget OutVT, float DeltaTime)
 
 defaultproperties
 {
-   CamOffset=(X=25.0,Y=0,Z=35.0)
+   CamOffset=(X=25.0,Y=0.0,Z=35.0)
    CurrentCameraScale=1.0
    CameraScale=9.0
    CameraScaleMin=3.0

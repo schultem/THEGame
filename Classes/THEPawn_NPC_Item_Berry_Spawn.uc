@@ -11,7 +11,7 @@ simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
 	SpawnDefaultController();
-	SetTimer(500, true, 'AITimer');
+	SetTimer(100, true, 'AITimer');
 }
  
 function AITimer()
@@ -45,7 +45,7 @@ function bool notEnoughBerries()
     {
 		j++;
 	}
-	if (i/j < 1)
+	if (i/j < 2)
 	{
 		return true;
 	}

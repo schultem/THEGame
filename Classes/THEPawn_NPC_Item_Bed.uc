@@ -1,7 +1,5 @@
 class THEPawn_NPC_Item_Bed extends Pawn
    placeable;
-   
-var THEPawn THEPawn_Instance;
 
 defaultproperties 
 {

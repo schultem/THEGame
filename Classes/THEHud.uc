@@ -38,7 +38,7 @@ function DrawHUD()
 	if(!ThePlayerController.bPressEscape)
 	{
 		//Draw status for items, etc
-	    if (playerStatusTimer > 0)
+	    if (playerStatusTimer > 0 && !ThePlayerController.bInBattle)
 	    {
 	        playerStatusTimer--;
 	    	DrawPlayerStatus(playerStatus);
@@ -438,7 +438,7 @@ function DrawWideScreen()
 function DrawBlackScreen()
 {
 	Canvas.SetPos(0,0);
-	Canvas.SetDrawColor(0,0,0,255);
+	Canvas.SetDrawColor(0,0,0,170);
 	Canvas.DrawRect(SizeX,SizeY);
 }
 

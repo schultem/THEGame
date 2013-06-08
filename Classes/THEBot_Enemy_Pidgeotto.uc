@@ -68,6 +68,16 @@ function ChooseNewDestination()
     //`log('ChooseNewDestination');
     OffsetX = Rand(Territory)-Rand(Territory);
     OffsetY = Rand(Territory)-Rand(Territory);
+	
+	if (OffsetX>-500 && OffsetX<500)
+	{
+		OffsetX=500;
+	}
+
+	if (OffsetY>-500 && OffsetY<500)
+	{
+		OffsetY=-500;
+	}
 
     MyTarget.X = Pawn.Location.X + OffsetX;
     MyTarget.Y = Pawn.Location.Y + OffsetY;
@@ -88,7 +98,7 @@ function WaitToReachDestination()
 		AIticks=0;
 		GoToState('MoveAbout');
 	}
-	if (AIticks>Rand(2000)||VSize2D(Pawn.Location-MyTarget)<50)
+	if (AIticks>(1000+Rand(1000)) || (VSize2D(Pawn.Location-MyTarget)<500))
 	{
 	    AIticks=0;
 	    ChooseNewDestination();

@@ -42,6 +42,7 @@ var bool bshowPokeballCloud;
 var int pokeballCloudCount;
 
 var int followerTimer;
+var int stepCount;
 
 /** 
  * STATE VARIABLES
@@ -85,6 +86,22 @@ var Rotator particleRotation;
 var int  lastNumeral;
 var bool bNumeralPressed;
 
+/** 
+ * SOUNDS
+ */
+var AudioComponent BattleMusic;
+var AudioComponent ForestSounds;
+var SoundCue soundthundershock;
+var SoundCue soundgust;
+var SoundCue soundbirdcall;
+var SoundCue soundlightning;
+var SoundCue soundbeam;
+var SoundCue soundrobot;
+var SoundCue soundping;
+var SoundCue soundpokeball;
+var SoundCue soundgrowl;
+var SoundCue soundfootstep;
+var SoundCue soundtackle;
 
 simulated event PostBeginPlay()
 {
@@ -96,6 +113,13 @@ simulated event PostBeginPlay()
     ConsoleCommand("SCALE SET ResX 1280");
     ConsoleCommand("SCALE SET ResY 720");
     ConsoleCommand("SCALE TOGGLE Fullscreen");
+	
+    //ConsoleCommand("SETRES 1920x1080x32 f");
+    //
+    //// Update settings in the ini
+    //ConsoleCommand("SCALE SET ResX 1920");
+    //ConsoleCommand("SCALE SET ResY 1080");
+    //ConsoleCommand("SCALE TOGGLE Fullscreen");
 
 	//Initial "State"/GameControl Variables, maybe move these to default eventually
 	bSelectCharacter              = true;
@@ -153,6 +177,10 @@ function PCTimer()
 	
 	if(bShowPokeballCloud)
 	{
+		if (pokeballCloudCount==1)
+		{
+			PlaySound(soundpokeball);
+		}
 		pokeballCloudCount++;
 		if (pokeballCloudCount>18)
 		{
@@ -162,6 +190,25 @@ function PCTimer()
 			}
 			bShowPokeballCloud=false;
 		}
+	}
+
+	if(abs(Pawn.Velocity.X)>150 || abs(Pawn.Velocity.Y)>150)
+	{
+		if (stepCount>3)
+		{
+			stepCount=0;
+			PlaySound(soundfootstep);
+		}
+		stepCount++;
+	}
+	else if(abs(Pawn.Velocity.X)>10 || abs(Pawn.Velocity.Y)>10)
+	{
+		if (stepCount>4)
+		{
+			stepCount=0;
+			PlaySound(soundfootstep);
+		}
+		stepCount++;
 	}
 
 	//if all of the character's party pokemon are fainted, game over
@@ -178,8 +225,9 @@ function PCTimer()
 	    		}
 	        }
 	    }
-	    if (j==0)
+	    if (j==0 && (bSelectBattlePokemon || !bInBattle))
 	    {
+			GoToState('Idle');
 	    	bGameOver=true;
 	    	bPressEscape=true;
 	    }
@@ -199,6 +247,7 @@ function PCTimer()
 	    			{
 	    	            char = gamestate.loadCharacter(chars[lastNumeral-1]);
 	    	    	    bSelectCharacter=false;
+						ForestSounds.Play();
 
 	    			    for (i = 0; i < char.pokemonInventory.Length; ++i)
 	    			    {
@@ -206,7 +255,7 @@ function PCTimer()
 	    			    	{
 	    			    	    if (char.pokemonInventory[i].inPlayerParty)
 	    			    		{
-	    			    			SpawnFollowerPikachu();
+	    			    			SpawnFollowerPikachu(); 
 	    			    		}
 	    			    	}
 	    			    }
@@ -218,28 +267,61 @@ function PCTimer()
 	    			{
 	    				if (lastNumeral==1)
 	    				{
-	    					createChar("Red");
-	    					addPokemon("Pikachu");
+							if(chars.Length==0)
+							{
+								createChar("Red");
+							}
+							if(chars.Length==1)
+							{
+								createChar("Blue");
+							}
+							if(chars.Length==2)
+							{
+								createChar("Green");
+							}		    					
+							addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=20;
+	    					char.characterPokeballs=1;
 	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==2)
 	    				{
-	    					createChar("Blue");
-	    					addPokemon("Pikachu");
+							if(chars.Length==0)
+							{
+								createChar("Red");
+							}
+							if(chars.Length==1)
+							{
+								createChar("Blue");
+							}
+							if(chars.Length==2)
+							{
+								createChar("Green");
+							}								
+							addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=20;
+	    					char.characterPokeballs=1;
 	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
 	    				if (lastNumeral==3)
 	    				{
-	    					createChar("Green");
-	    					addPokemon("Pikachu");
+							if(chars.Length==0)
+							{
+								createChar("Red");
+							}
+							if(chars.Length==1)
+							{
+								createChar("Blue");
+							}
+							if(chars.Length==2)
+							{
+								createChar("Green");
+							}	    					
+							addPokemon("Pikachu");
 	    					char.pokemonInventory[0].inPlayerParty=true;
-	    					char.characterPokeballs=20;
+	    					char.characterPokeballs=1;
 	    					//char.characterBerries=20;
 	    					saveChar();
 	    				}
@@ -824,11 +906,18 @@ function PCTimer()
 					followerTimer--;
 				}
 			}
+			
+			if(VSize2D(Pawn.Location - Follower.Location) > 800  && !bSelectCharacter)
+			{
+				Follower.destroy();
+	        	Follower = Spawn(FollowerPawnClass,,, Pawn.Location - vect(200,200,0), Pawn.Rotation);
+			}
+
 
 	        foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item_Bed',Bed_Instance)
             {
 				Distance = VSize2D(Pawn.Location - Bed_Instance.Location);
-	        	if (Distance < 75)
+	        	if (Distance < 125)
 	        	{
 					HealAllPokemon();
 					if (THEHud(myHUD).playerStatusTimer<1)
@@ -840,19 +929,18 @@ function PCTimer()
 	        foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item_Computer',Computer_Instance)
             {
 				Distance = VSize2D(Pawn.Location - Computer_Instance.Location);
-	        	if (Distance < 75)
+	        	if (Distance < 125)
 				{
-					//play computer on animation
+					Computer_Instance.IdleSlot.SetBlendTarget(1.0f, 0.25f);
+
 					if (bNumeralPressed && lastNumeral == 1)
 	                {
 						if (char.characterBerries>0)
 						{
 						    char.characterBerries--;
 						    char.characterPokeballs++;
-							if (THEHud(myHUD).playerStatusTimer<1)
-							{
-								THEHud(myHUD).SetPlayerStatus("Traded a berry for a pokeball");
-							}
+							THEHud(myHUD).SetPlayerStatus("Traded a berry for a pokeball");
+							PlaySound(soundping);
 						}
 						else
 						{
@@ -864,6 +952,10 @@ function PCTimer()
 					}
 				ResetNumeralPress();
 	        	}
+				else
+				{
+					Computer_Instance.IdleSlot.SetBlendTarget(0.0f, 0.25f);
+				}
 	        }
 
             foreach WorldInfo.AllPawns(class'THEPawn_NPC_Item', Item)
@@ -873,6 +965,7 @@ function PCTimer()
 					Distance = VSize2D(Pawn.Location - Item.Location);
 					if (Distance < 50)
 					{
+						PlaySound(soundping);
 						//Add item type to inventory
 						switch(Item.itemName)
 	                    {
@@ -902,8 +995,8 @@ function PCTimer()
                 {
                     Distance = VSize2D(Pawn.Location - Enemy_Instance.Location);
                     if (Distance < 425)
-	         	    {
-        
+	         	    { 
+						BattleMusic.Play();
 	        			bInBattle = true;
 	    				bSelectBattlePokemon=true;
 	    				EnemyPokemon=Enemy_Instance;
@@ -1027,7 +1120,7 @@ function PlayerPokemonVictory()
 function SpawnFollowerPikachu()
 {
 	`Log("Spawn Pikachu");
-	Follower = Spawn(FollowerPawnClass,,, Pawn.Location - vect(200,200,0), Pawn.Rotation);
+	Follower = Spawn(FollowerPawnClass,,, Pawn.Location - vect(-200,-200,0), Pawn.Rotation);
 	return;
 }
 
@@ -1331,6 +1424,7 @@ function BattleStateExitCleanup()
 	}
 	RecallFriendly();
 	Follower.SetControllerBattleStatus(false);
+	BattleMusic.FadeOut(2,0);
     return;
 }
 
@@ -2771,16 +2865,16 @@ exec function createChar(string charName)
 {
 	if (len(charName) == 0)
 	{
-		TeamMessage(none, "The character must have a name", 'none');
+		//TeamMessage(none, "The character must have a name", 'none');
 		return;
 	}
 	if (char != none)
 	{
-		TeamMessage(none, "Discarding previous character: "$char.CharacterName$" (id:"$char.Name$")", 'none');
+		//TeamMessage(none, "Discarding previous character: "$char.CharacterName$" (id:"$char.Name$")", 'none');
 	}
 	char = gamestate.createCharacter(charName);
 	char.CharacterName = charName;
-	TeamMessage(none, "New character created", 'none');
+	//TeamMessage(none, "New character created", 'none');
 	showChar();
 	return;
 }
@@ -2793,7 +2887,7 @@ exec function saveChar()
 	if (char != none)
 	{
 		char.save();
-		TeamMessage(none, "Current character saved", 'none');
+		//TeamMessage(none, "Current character saved", 'none');
 	}
 	return;
 }
@@ -2805,20 +2899,20 @@ exec function loadChar(String charId)
 {
 	if (len(charId) == 0)
 	{
-		TeamMessage(none, "No character id given", 'none');
+		//TeamMessage(none, "No character id given", 'none');
 		return;
 	}
 	if (char != none)
 	{
-		TeamMessage(none, "Discarding previous character: "$char.CharacterName$" (id:"$char.Name$")", 'none');
+		//TeamMessage(none, "Discarding previous character: "$char.CharacterName$" (id:"$char.Name$")", 'none');
 	}
 	char = gamestate.loadCharacter(charId);
 	if (char == none)
 	{
-		TeamMessage(none, "No character found with id: "$charId, 'none');
+		//TeamMessage(none, "No character found with id: "$charId, 'none');
 	}
 	else {
-		TeamMessage(none, "Character loaded", 'none');
+		//TeamMessage(none, "Character loaded", 'none');
 		showChar();
 	}
 	return;
@@ -2834,13 +2928,13 @@ exec function printChars()
 	chars = gamestate.getCharacters();
 	if (chars.length == 0)
 	{
-		TeamMessage(none, "There are no saved characters", 'none');
+		//TeamMessage(none, "There are no saved characters", 'none');
 		return;
 	}
-	TeamMessage(none, "The following character ids exist:", 'none');
+	//TeamMessage(none, "The following character ids exist:", 'none');
 	for (i = 0; i < chars.length; ++i)
 	{
-		TeamMessage(none, "    "$chars[i], 'none');
+		//TeamMessage(none, "    "$chars[i], 'none');
 	}
 	return;
 }
@@ -2936,20 +3030,20 @@ exec function showChar()
     local int i,j;
 	if (char == none)
 	{
-		TeamMessage(none, "There is no character", 'none');
+		//TeamMessage(none, "There is no character", 'none');
 	}
-	TeamMessage(none, "ID:                "$char.name, 'none');
-	TeamMessage(none, "Display Name:      "$char.CharacterName, 'none');
-	TeamMessage(none, "Pokemon Inventory: "$char.pokemonInventory.length$" pokemon", 'none');
+	//TeamMessage(none, "ID:                "$char.name, 'none');
+	//TeamMessage(none, "Display Name:      "$char.CharacterName, 'none');
+	//TeamMessage(none, "Pokemon Inventory: "$char.pokemonInventory.length$" pokemon", 'none');
 	for (i = 0; i < char.pokemonInventory.Length; ++i)
 	{
-		TeamMessage(none, "+   Pokemon:    "$char.pokemonInventory[i].pokemonSpecies, 'none');
-		TeamMessage(none, "    ID:         "$char.pokemonInventory[i].name, 'none');
-		TeamMessage(none, "    Name:       "$char.pokemonInventory[i].pokemonDisplayName, 'none');
+		//TeamMessage(none, "+   Pokemon:    "$char.pokemonInventory[i].pokemonSpecies, 'none');
+		//TeamMessage(none, "    ID:         "$char.pokemonInventory[i].name, 'none');
+		//TeamMessage(none, "    Name:       "$char.pokemonInventory[i].pokemonDisplayName, 'none');
 		for (j = 0; j < char.pokemonInventory[i].pokemonAttackInventory.Length; ++j)
 	    {
-		    TeamMessage(none, "    +   Attack:     "$char.pokemonInventory[i].pokemonAttackInventory[j].attackDisplayName, 'none');
-			TeamMessage(none, "        ID:         "$char.pokemonInventory[i].pokemonAttackInventory[j].name, 'none');
+		    //TeamMessage(none, "    +   Attack:     "$char.pokemonInventory[i].pokemonAttackInventory[j].attackDisplayName, 'none');
+			//TeamMessage(none, "        ID:         "$char.pokemonInventory[i].pokemonAttackInventory[j].name, 'none');
 		}
 	}
 	return;
@@ -2966,13 +3060,13 @@ exec function addPokemon(String basePokemon)
 	
 	if (char == none)
 	{
-		TeamMessage(none, "There is no character to add to", 'none');
+		//TeamMessage(none, "There is no character to add to", 'none');
 		return;
 	}
 	
 	if (char.checkPokemonInventorySpecies(basePokemon))
 	{
-		TeamMessage(none, "Character already has a "$basePokemon, 'none');
+		//TeamMessage(none, "Character already has a "$basePokemon, 'none');
 		return;
 	}
 	
@@ -2980,7 +3074,7 @@ exec function addPokemon(String basePokemon)
 	
 	if (pkmn == none)
 	{
-		TeamMessage(none, "No pokemon type exists with id: "$basePokemon, 'none');
+		//TeamMessage(none, "No pokemon type exists with id: "$basePokemon, 'none');
 		return;
 	}
 
@@ -2988,7 +3082,7 @@ exec function addPokemon(String basePokemon)
 	inv = gamestate.createPokemonInventory(pkmn);
 	if (inv == none)
 	{
-		TeamMessage(none, "Error creating inventory pokemon from: "$basePokemon, 'none');
+		//TeamMessage(none, "Error creating inventory pokemon from: "$basePokemon, 'none');
 		return;
 	}
 	
@@ -2996,10 +3090,10 @@ exec function addPokemon(String basePokemon)
 	status = AddPokemonAttackForLevel(inv.pokemonSpecies,inv.level);
 	if (status == false)
 	{
-	    TeamMessage(none, "Failed to add Level 1 attacks because you're a bad programmer", 'none');
+	    //TeamMessage(none, "Failed to add Level 1 attacks because you're a bad programmer", 'none');
     }
 	
-	TeamMessage(none, "Pokemon "$inv.pokemonSpecies$" added to char"$char.CharacterName$" (id:"$char.Name$")", 'none');
+	//TeamMessage(none, "Pokemon "$inv.pokemonSpecies$" added to char"$char.CharacterName$" (id:"$char.Name$")", 'none');
 	return;
 }
 
@@ -3011,17 +3105,17 @@ exec function removePokemon(String basePokemonSpecies)
 	local bool status;
 	if (char == none)
 	{
-		TeamMessage(none, "There is no character to remove from", 'none');
+		//TeamMessage(none, "There is no character to remove from", 'none');
 		return;
 	}
 	
 	status = char.removePokemonInventory(basePokemonSpecies);
 	if (status == false)
 	{
-		TeamMessage(none, "Error removing inventory pokemon species from: "$basePokemonSpecies, 'none');
+		//TeamMessage(none, "Error removing inventory pokemon species from: "$basePokemonSpecies, 'none');
 		return;
 	}
-	TeamMessage(none, "Pokemon type "$basePokemonSpecies$" removed from char "$char.CharacterName$" (id:"$char.Name$")", 'none');
+	//TeamMessage(none, "Pokemon type "$basePokemonSpecies$" removed from char "$char.CharacterName$" (id:"$char.Name$")", 'none');
 	return;
 }
 
@@ -3036,19 +3130,19 @@ exec function bool addPokemonAttack(String pokemon, String baseAttack)
 	
 	if (char == none)
 	{
-		TeamMessage(none, "There is no character to add to", 'none');
+		//TeamMessage(none, "There is no character to add to", 'none');
 		return false;
 	}
 	
 	if (char.checkPokemonInventorySpecies(pokemon) == False)
 	{
-		TeamMessage(none, "Character does not have a "$pokemon$" to add an attack to.", 'none');
+		//TeamMessage(none, "Character does not have a "$pokemon$" to add an attack to.", 'none');
 		return false;
 	}
 	
 	if (char.checkPokemonInventoryAttack(pokemon,baseAttack) == True)
 	{
-		TeamMessage(none, "Attack type already exists with id: "$baseAttack, 'none');
+		//TeamMessage(none, "Attack type already exists with id: "$baseAttack, 'none');
 		return false;
 	}
 	
@@ -3056,20 +3150,20 @@ exec function bool addPokemonAttack(String pokemon, String baseAttack)
 	
 	if (atk == none)
 	{
-		TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
+		//TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
 		return false;
 	}
 
 	inv = gamestate.createPokemonAttackInventory(atk);
 	if (inv == none)
 	{
-		TeamMessage(none, "Error creating inventory attack from: "$baseAttack, 'none');
+		//TeamMessage(none, "Error creating inventory attack from: "$baseAttack, 'none');
 		return false;
 	}
 	status = char.addPokemonAttackInventory(pokemon,inv);
 	if (status == false)
 	{
-	    TeamMessage(none, "Attack "$inv.attackDisplayName$" not added to pokemon "$pokemon$" because it has 4 moves already.", 'none');
+	    //TeamMessage(none, "Attack "$inv.attackDisplayName$" not added to pokemon "$pokemon$" because it has 4 moves already.", 'none');
 		return false;
 	}
 	//TeamMessage(none, "Attack "$inv.attackDisplayName$" added to pokemon "$pokemon, 'none');
@@ -3088,14 +3182,14 @@ exec function bool addEnemyAttack(String baseAttack)
 	
 	if (atk == none)
 	{
-		TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
+		//TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
 		return false;
 	}
 
 	inv = gamestate.createPokemonAttackInventory(atk);
 	if (inv == none)
 	{
-		TeamMessage(none, "Error creating inventory attack from: "$baseAttack, 'none');
+		//TeamMessage(none, "Error creating inventory attack from: "$baseAttack, 'none');
 		return false;
 	}
 
@@ -3130,19 +3224,19 @@ exec function removePokemonAttack(String pokemon, String baseAttack)
 
 	if (char == none)
 	{
-		TeamMessage(none, "There is no character to add to", 'none');
+		//TeamMessage(none, "There is no character to add to", 'none');
 		return;
 	}
 	
 	if (char.checkPokemonInventorySpecies(pokemon) == False)
 	{
-		TeamMessage(none, "Character does not have a "$pokemon$" to remove an attack from.", 'none');
+		//TeamMessage(none, "Character does not have a "$pokemon$" to remove an attack from.", 'none');
 		return;
 	}
 
 	if (char.checkPokemonInventoryAttack(pokemon,baseAttack) == False)
 	{
-		TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
+		//TeamMessage(none, "No attack type exists with id: "$baseAttack, 'none');
 		return;
 	}
 
@@ -3611,12 +3705,18 @@ function FaintEnemyPokemon()
 function StartPokemonParticleComponent(String attackName, Vector targetLocation, Vector sourceLocation, Rotator spawnParticleRotation)
 {
 	StopPokemonParticleComponent();
+	if (attackName == "Tackle" || attackName == "Tailwhip" || attackName== "Aglity")
+	{
+		PlaySound(soundtackle);
+	}
 	if (attackName == "ThunderShock")
 	{
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thundershock', targetLocation, spawnParticleRotation);
+		PlaySound(soundthundershock);
 	}
 	if (attackName == "Growl")
 	{
+		PlaySound(soundgrowl);
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Growl', sourceLocation, spawnParticleRotation);
 	}
@@ -3624,14 +3724,17 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	{
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunderwave', targetLocation, spawnParticleRotation);
+		PlaySound(soundthundershock);
 	}
 	if (attackName == "QuickAttack")
 	{
+		PlaySound(soundtackle);
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Quickattack', sourceLocation, spawnParticleRotation);
 	}
 	if (attackName == "Swift") 
 	{
+		PlaySound(soundtackle);
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Swift', sourceLocation, spawnParticleRotation);
 	}
@@ -3639,6 +3742,8 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	{
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Thunder', targetLocation, spawnParticleRotation);
+		PlaySound(soundlightning);
+		PlaySound(soundthundershock);
 	}
 	if (attackName == "FocusEnergy" || attackName == "Recover")
 	{
@@ -3649,26 +3754,39 @@ function StartPokemonParticleComponent(String attackName, Vector targetLocation,
 	{
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_PsyBeam', sourceLocation, spawnParticleRotation);
+		PlaySound(soundbeam);
 	}
 	if (attackName == "Gust")
 	{
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Gust', sourceLocation, spawnParticleRotation);
+		PlaySound(soundgust);
+		PlaySound(soundbirdcall);
 	}
 	if (attackName == "SandAttack")
 	{
 		spawnParticleRotation.pitch = spawnParticleRotation.pitch-90*DegToUnrRot;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_SandAttack', sourceLocation, spawnParticleRotation);
+		PlaySound(soundgust);
+
 	}
 	if (attackName == "Whirlwind")
 	{
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_Whirlwind', targetLocation, spawnParticleRotation);
+		PlaySound(soundbirdcall);
+		PlaySound(soundgust);
 	}
 	if (attackName == "WingAttack")
 	{
 		targetLocation.Z=targetLocation.Z-50;
 		spawnedParticleComponents = WorldInfo.MyEmitterPool.SpawnEmitter(ParticleSystem'THEGamePackage.PS_WingAttack', targetLocation, spawnParticleRotation);
+		PlaySound(soundbirdcall);
+		PlaySound(soundgust);
+	}
+	if ((currentSelectedBattlePokemon.pokemonSpecies == "Porygon" && bPlayerAttackAnimStarted) || (EnemyPokemonDBInstance.pokemonSpecies == "Porygon" && bEnemyAttackAnimStarted))
+	{
+		PlaySound(soundrobot);
 	}
 
 	return;
@@ -3691,4 +3809,22 @@ defaultproperties
    wildLevelMultiplier=1.5
    CameraClass=class'THEGame.THEPlayerCamera'
    FollowerPawnClass=class'THEGame.THEPawn_NPC_Pikachu'
+
+   //SOUND DEFINITIONS
+    Begin Object Class=AudioComponent Name=Music01Comp
+        SoundCue=THEGamePackage.Sounds.WAV_BattleMusic_Cue
+    End Object
+    
+    BattleMusic = Music01Comp
+	soundthundershock = SoundCue'THEGamePackage.Sounds.WAV_Thundershock_Cue'
+	soundgust = SoundCue'THEGamePackage.Sounds.WAV_Gust_Cue'
+	soundbirdcall = SoundCue'THEGamePackage.Sounds.WAV_Birdcall_Cue'
+	soundlightning = SoundCue'THEGamePackage.Sounds.WAV_Lightning_Cue'
+	soundrobot = SoundCue'THEGamePackage.Sounds.WAV_Robot_Cue'
+	soundbeam = SoundCue'THEGamePackage.Sounds.WAV_Beam_Cue'
+	soundpokeball = SoundCue'THEGamePackage.Sounds.WAV_Pokeball_Cue'
+	soundping = SoundCue'THEGamePackage.Sounds.WAV_Ping_Cue'
+	soundgrowl = SoundCue'THEGamePackage.Sounds.WAV_Growl_Cue'
+	soundfootstep = SoundCue'THEGamePackage.Sounds.WAV_Footstep_Cue'
+	soundtackle = SoundCue'THEGamePackage.Sounds.WAV_Tackle_Cue'
 }
